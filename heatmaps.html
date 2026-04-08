@@ -34,6 +34,18 @@
       defer
     ></script>
     <script src="https://unpkg.com/leaflet-image@0.4.0/leaflet-image.js" defer></script>
+    <script>
+      // Flag this page as the Heatmaps Hub to prevent React Router redirection issues
+      window.__AGRI_EYE_PAGE = 'heatmaps';
+      
+      // If we are authenticated, trick the React bundle into thinking we are on /dashboard
+      // This prevents it from falling back to the landing page/home page.
+      try {
+        if (window.localStorage.getItem('agri-eye-auth') === 'true') {
+          window.history.replaceState(null, '', 'index.html');
+        }
+      } catch (e) {}
+    </script>
     <script src="./heatmap-map.js" defer></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CJGY0e7r.css">
   </head>

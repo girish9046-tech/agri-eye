@@ -93,7 +93,7 @@
 
   function isHeatmapsPage() {
     const path = window.location.pathname;
-    return path.includes("/heatmaps.html") || path.endsWith("/heatmaps.html");
+    return window.__AGRI_EYE_PAGE === 'heatmaps' || path.includes("heatmaps.html") || path.endsWith("heatmaps.html");
   }
 
   function isProtectedPath(pathname) {
@@ -188,9 +188,11 @@
     navLinks.forEach(function (link) {
       const href = link.getAttribute('href');
       const text = link.textContent.trim().toLowerCase();
-      
+      const isHeatmap = text.includes('heatmap') || (href && href.includes('heatmap'));
+      const isDashboard = text === 'dashboard' || (href && (href === '/' || href === '/dashboard' || href === 'index.html' || href === 'dashboard'));
+
       // Handle Heatmap Link
-      if (text.includes('heatmap') || (href && href.includes('heatmap'))) {
+      if (isHeatmap) {
         link.setAttribute('href', 'heatmaps.html');
         heatmapLinkFound = true;
         
@@ -205,16 +207,20 @@
 
         // Apply visual active state if on Heatmaps page
         if (isHeatmapsPage()) {
-          link.classList.add('bg-gray-100', 'text-gray-900', 'font-semibold');
-          link.classList.remove('text-gray-600', 'hover:bg-gray-50');
+          link.setAttribute('data-agri-active', 'true');
+          link.style.backgroundColor = '#f3f4f6';
+          link.style.color = '#111827';
+          link.style.fontWeight = '600';
         } else {
-          link.classList.remove('bg-gray-100', 'text-gray-900', 'font-semibold');
-          link.classList.add('text-gray-600', 'hover:bg-gray-50');
+          link.removeAttribute('data-agri-active');
+          link.style.backgroundColor = '';
+          link.style.color = '';
+          link.style.fontWeight = '';
         }
       }
       
       // Handle Dashboard Link
-      if (text === 'dashboard' || (href && (href === '/' || href === '/dashboard' || href === 'index.html'))) {
+      if (isDashboard) {
         link.setAttribute('href', 'index.html');
         dashboardLink = link;
         
@@ -229,52 +235,63 @@
 
         // Remove active state if on Heatmaps page
         if (isHeatmapsPage()) {
-          link.classList.remove('bg-gray-100', 'text-gray-900', 'font-semibold');
-          link.classList.add('text-gray-600', 'hover:bg-gray-50');
+          link.removeAttribute('data-agri-active');
+          link.style.backgroundColor = '';
+          link.style.color = '';
+          link.style.fontWeight = '';
         } else if (!isHeatmapsPage() && isDashboardRoute()) {
-          link.classList.add('bg-gray-100', 'text-gray-900', 'font-semibold');
-          link.classList.remove('text-gray-600', 'hover:bg-gray-50');
+          link.setAttribute('data-agri-active', 'true');
+          link.style.backgroundColor = '#f3f4f6';
+          link.style.color = '#111827';
+          link.style.fontWeight = '600';
         }
       }
     });
 
     // If no Heatmap link was found, try to inject one after the Dashboard link
     if (!heatmapLinkFound && dashboardLink) {
-      const heatmapLi = dashboardLink.parentElement.cloneNode(true);
-      const newLink = heatmapLi.querySelector('a');
-      if (newLink) {
-        newLink.setAttribute('href', 'heatmaps.html');
-        newLink.removeAttribute('data-agriHijacked');
-        
-        // Add click listener for new link too
-        newLink.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = 'heatmaps.html';
-        });
-        
-        // Update text and icon if possible
-        const textSpan = newLink.querySelector('span:not(.sr-only)');
-        if (textSpan) {
-          textSpan.textContent = 'Heatmaps';
-        } else {
-          newLink.textContent = 'Heatmaps';
-        }
+      const existingInjected = document.querySelector('[data-agri-injected="true"]');
+      if (!existingInjected) {
+        const heatmapLi = dashboardLink.parentElement.cloneNode(true);
+        heatmapLi.setAttribute('data-agri-injected', 'true');
+        const newLink = heatmapLi.querySelector('a');
+        if (newLink) {
+          newLink.setAttribute('href', 'heatmaps.html');
+          newLink.removeAttribute('data-agriHijacked');
+          
+          // Add click listener for new link too
+          newLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = 'heatmaps.html';
+          });
+          
+          // Update text and icon if possible
+          const textSpan = newLink.querySelector('span:not(.sr-only)');
+          if (textSpan) {
+            textSpan.textContent = 'Heatmaps';
+          } else {
+            newLink.textContent = 'Heatmaps';
+          }
 
-        // Try to change the icon to something map-like if it's a Lucide icon (SVG)
-        const svg = newLink.querySelector('svg');
-        if (svg) {
-          svg.innerHTML = '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path>';
-        }
+          // Try to change the icon to something map-like if it's a Lucide icon (SVG)
+          const svg = newLink.querySelector('svg');
+          if (svg) {
+            svg.innerHTML = '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path>';
+          }
 
-        // Handle active state for injected link
-        if (isHeatmapsPage()) {
-          newLink.classList.add('bg-gray-100', 'text-gray-900', 'font-semibold');
-          dashboardLink.classList.remove('bg-gray-100', 'text-gray-900', 'font-semibold');
-          dashboardLink.classList.add('text-gray-600', 'hover:bg-gray-50');
-        }
+          // Handle active state for injected link
+          if (isHeatmapsPage()) {
+            newLink.style.backgroundColor = '#f3f4f6';
+            newLink.style.color = '#111827';
+            newLink.style.fontWeight = '600';
+            dashboardLink.style.backgroundColor = '';
+            dashboardLink.style.color = '';
+            dashboardLink.style.fontWeight = '';
+          }
 
-        dashboardLink.parentElement.parentElement.insertBefore(heatmapLi, dashboardLink.parentElement.nextSibling);
+          dashboardLink.parentElement.parentElement.insertBefore(heatmapLi, dashboardLink.parentElement.nextSibling);
+        }
       }
     }
   }
@@ -291,7 +308,7 @@
 
   function enforceAuthAccess() {
     const pathname = window.location.pathname;
-    const isHeatmapFile = pathname.includes('heatmaps.html') || pathname.endsWith('heatmaps.html');
+    const isHeatmapFile = window.__AGRI_EYE_PAGE === 'heatmaps' || pathname.includes('heatmaps.html') || pathname.endsWith('heatmaps.html');
     const isIndexFile = pathname === '/' || pathname === '/index.html' || pathname.endsWith('index.html');
 
     // Skip auth check if we are already on a protected page that was loaded directly
