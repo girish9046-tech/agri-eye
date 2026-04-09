@@ -84,16 +84,72 @@
   }
 
   function isDashboardRoute() {
+    const hash = window.location.hash;
     const path = window.location.pathname;
-    const isRoot = path === "/" || path === "/index.html" || path.endsWith("/index.html");
-    const isDashboard = path === "/dashboard" || path.endsWith("/dashboard");
-    const isHeatmaps = path.includes("heatmaps.html") || path.endsWith("heatmaps.html");
-    return isRoot || isDashboard || isHeatmaps;
+    // HashRouter: dashboard is at /#/dashboard
+    const isHashDashboard = hash === '#/dashboard' || hash.startsWith('#/dashboard');
+    // Legacy: direct file access
+    const isRoot = path === '/' || path === '/index.html' || path.endsWith('/index.html');
+    const isDashboard = path === '/dashboard' || path.endsWith('/dashboard');
+    const isHeatmaps = path.includes('heatmaps.html') || path.endsWith('heatmaps.html');
+    return isHashDashboard || ((isRoot || isDashboard) && hash === '') || isHeatmaps;
   }
 
   function isHeatmapsPage() {
-    const path = window.location.pathname;
-    return window.__AGRI_EYE_PAGE === 'heatmaps' || path.includes("heatmaps.html") || path.endsWith("heatmaps.html");
+    try {
+      return sessionStorage.getItem('agri-eye-heatmaps-mode') === 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function setHeatmapsMode(enabled) {
+    try {
+      if (enabled) {
+        sessionStorage.setItem('agri-eye-heatmaps-mode', 'true');
+        sessionStorage.removeItem('agri-eye-crop-health-mode');
+      } else {
+        sessionStorage.removeItem('agri-eye-heatmaps-mode');
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function isCropHealthPage() {
+    try {
+      return sessionStorage.getItem('agri-eye-crop-health-mode') === 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function setCropHealthMode(enabled) {
+    try {
+      if (enabled) {
+        sessionStorage.setItem('agri-eye-crop-health-mode', 'true');
+        sessionStorage.removeItem('agri-eye-heatmaps-mode');
+      } else {
+        sessionStorage.removeItem('agri-eye-crop-health-mode');
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  /** Returns true if user is on a page mode that takes over the dashboard */
+  function isSubPageActive() {
+    return isHeatmapsPage() || isCropHealthPage();
+  }
+
+  /**
+   * Navigate within the React SPA without a full page reload.
+   * Works with HashRouter by setting window.location.hash.
+   */
+  function navigateSPA(hashRoute) {
+    // hashRoute should be like '#/dashboard'
+    if (window.location.hash === hashRoute) {
+      // Already there, just trigger re-render
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      return;
+    }
+    window.location.hash = hashRoute;
   }
 
   function isProtectedPath(pathname) {
@@ -170,8 +226,17 @@
       textNode.textContent = displayName;
     }
 
-    const avatarNode = Array.from(header.querySelectorAll('a[href="/profile"] div')).find(function (node) {
-      return typeof node.className === "string" && node.className.includes("rounded-full");
+    // Find avatar node — works with both /profile and HashRouter #/profile hrefs
+    const profileLinks = Array.from(header.querySelectorAll('a'));
+    let avatarNode = null;
+    profileLinks.forEach(function (pLink) {
+      const h = pLink.getAttribute('href') || '';
+      if (h.includes('profile')) {
+        const circle = pLink.querySelector('div');
+        if (circle && typeof circle.className === 'string' && circle.className.includes('rounded-full')) {
+          avatarNode = circle;
+        }
+      }
     });
 
     if (avatarNode) {
@@ -180,9 +245,10 @@
       avatarNode.setAttribute("aria-label", displayName);
     }
 
-    // Update navigation links to point to heatmaps.html
+    // Update navigation links to use SPA navigation instead of full page reloads
     const navLinks = Array.from(document.querySelectorAll('nav a, header a, aside a'));
     let heatmapLinkFound = false;
+    let cropHealthLinkFound = false;
     let dashboardLink = null;
 
     navLinks.forEach(function (link) {
@@ -191,9 +257,9 @@
       const isHeatmap = text.includes('heatmap') || (href && href.includes('heatmap'));
       const isDashboard = text === 'dashboard' || (href && (href === '/' || href === '/dashboard' || href === 'index.html' || href === 'dashboard'));
 
-      // Handle Heatmap Link
+      // Handle Heatmap Link — navigate to #/dashboard within the SPA, with heatmaps mode
       if (isHeatmap) {
-        link.setAttribute('href', 'heatmaps.html');
+        link.setAttribute('href', '#/dashboard');
         heatmapLinkFound = true;
         
         if (!link.dataset.agriHijacked) {
@@ -201,27 +267,63 @@
           link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            window.location.href = 'heatmaps.html';
+            setHeatmapsMode(true);
+            navigateSPA('#/dashboard');
+            // Force re-render of the heatmaps section
+            if (state.section) {
+              state.section.dataset.agriRendered = '';
+            }
+            scheduleEnhancement();
           });
         }
 
-        // Apply visual active state if on Heatmaps page
+        // Apply visual active state if on Heatmaps page — use green styling to match sidebar theme
         if (isHeatmapsPage()) {
           link.setAttribute('data-agri-active', 'true');
-          link.style.backgroundColor = '#f3f4f6';
-          link.style.color = '#111827';
-          link.style.fontWeight = '600';
+          link.style.cssText = 'background-color: #f0fdf4 !important; color: #15803d !important; font-weight: 600 !important;';
         } else {
           link.removeAttribute('data-agri-active');
-          link.style.backgroundColor = '';
-          link.style.color = '';
-          link.style.fontWeight = '';
+          link.style.cssText = '';
+        }
+      }
+
+      // Handle Crop Health Link
+      var isCropHealth = !isHeatmap && !isDashboard && (text.includes('crop health') || (text.includes('crop') && text.includes('health')) || (href && href.includes('crop-health')));
+      if (isCropHealth) {
+        link.setAttribute('href', '#/dashboard');
+        cropHealthLinkFound = true;
+
+        if (!link.dataset.agriHijacked) {
+          link.dataset.agriHijacked = 'true';
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            setCropHealthMode(true);
+            // Immediately hide heatmap section if visible
+            if (state.section) {
+              state.section.className = SECTION_MARKER;
+              state.section.dataset.agriRendered = '';
+            }
+            hideOtherDashboardContent(true);
+            navigateSPA('#/dashboard');
+            // Force immediate re-render
+            ensureCropHealthSection();
+            normalizeDashboardNav();
+          });
+        }
+
+        if (isCropHealthPage()) {
+          link.setAttribute('data-agri-active', 'true');
+          link.style.cssText = 'background-color: #f0fdf4 !important; color: #15803d !important; font-weight: 600 !important;';
+        } else {
+          link.removeAttribute('data-agri-active');
+          link.style.cssText = '';
         }
       }
       
-      // Handle Dashboard Link
+      // Handle Dashboard Link — navigate to #/dashboard within the SPA
       if (isDashboard) {
-        link.setAttribute('href', 'index.html');
+        link.setAttribute('href', '#/dashboard');
         dashboardLink = link;
         
         if (!link.dataset.agriHijacked) {
@@ -229,21 +331,30 @@
           link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            window.location.href = 'index.html';
+            setHeatmapsMode(false);
+            setCropHealthMode(false);
+            // Immediately restore hidden content
+            hideOtherDashboardContent(false);
+            // Force re-render of heatmap section with non-enlarged mode
+            if (state.section) {
+              state.section.className = SECTION_MARKER;
+              state.section.dataset.agriRendered = '';
+            }
+            navigateSPA('#/dashboard');
+            scheduleEnhancement();
           });
         }
 
-        // Remove active state if on Heatmaps page
-        if (isHeatmapsPage()) {
+        // Manage Dashboard active state — use !important inline styles to override React
+        if (isSubPageActive()) {
           link.removeAttribute('data-agri-active');
-          link.style.backgroundColor = '';
-          link.style.color = '';
-          link.style.fontWeight = '';
-        } else if (!isHeatmapsPage() && isDashboardRoute()) {
-          link.setAttribute('data-agri-active', 'true');
-          link.style.backgroundColor = '#f3f4f6';
-          link.style.color = '#111827';
-          link.style.fontWeight = '600';
+          link.style.cssText = 'background-color: transparent !important; color: #6b7280 !important; font-weight: 500 !important;';
+          link.dataset.agriDimmed = 'true';
+        } else if (isDashboardRoute()) {
+          if (link.dataset.agriDimmed) {
+            link.style.cssText = '';
+            delete link.dataset.agriDimmed;
+          }
         }
       }
     });
@@ -256,14 +367,19 @@
         heatmapLi.setAttribute('data-agri-injected', 'true');
         const newLink = heatmapLi.querySelector('a');
         if (newLink) {
-          newLink.setAttribute('href', 'heatmaps.html');
+          newLink.setAttribute('href', '#/dashboard');
           newLink.removeAttribute('data-agriHijacked');
           
-          // Add click listener for new link too
+          // Add click listener — use SPA navigation with heatmaps mode
           newLink.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            window.location.href = 'heatmaps.html';
+            setHeatmapsMode(true);
+            navigateSPA('#/dashboard');
+            if (state.section) {
+              state.section.dataset.agriRendered = '';
+            }
+            scheduleEnhancement();
           });
           
           // Update text and icon if possible
@@ -280,10 +396,10 @@
             svg.innerHTML = '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path>';
           }
 
-          // Handle active state for injected link
+          // Handle active state for injected link — green to match sidebar theme
           if (isHeatmapsPage()) {
-            newLink.style.backgroundColor = '#f3f4f6';
-            newLink.style.color = '#111827';
+            newLink.style.backgroundColor = '#f0fdf4';
+            newLink.style.color = '#15803d';
             newLink.style.fontWeight = '600';
             dashboardLink.style.backgroundColor = '';
             dashboardLink.style.color = '';
@@ -309,20 +425,17 @@
   function enforceAuthAccess() {
     const pathname = window.location.pathname;
     const isHeatmapFile = window.__AGRI_EYE_PAGE === 'heatmaps' || pathname.includes('heatmaps.html') || pathname.endsWith('heatmaps.html');
-    const isIndexFile = pathname === '/' || pathname === '/index.html' || pathname.endsWith('index.html');
 
-    // Skip auth check if we are already on a protected page that was loaded directly
-    // This prevents the "flash" of the landing page
-    if ((isHeatmapFile || isIndexFile) && isAuthenticated()) {
-      return true;
-    }
-
-    if (isProtectedPath(pathname) && !isAuthenticated()) {
-      const next = pathname + window.location.hash;
-      window.location.replace("/auth?from=" + encodeURIComponent(next));
+    // If on legacy heatmaps.html, redirect to the SPA dashboard with heatmaps mode
+    if (isHeatmapFile && isAuthenticated()) {
+      setHeatmapsMode(true);
+      // Redirect to index.html with hash route for dashboard
+      window.location.replace('/#/dashboard');
       return false;
     }
 
+    // Let React's ProtectedRoute handle auth checks — don't do redundant redirects
+    // that would cause the landing page to flash
     return true;
   }
 
@@ -598,7 +711,7 @@
         '<span>' + highRiskCount + ' critical cells identified in the latest scan.</span>' +
         '</div>' +
         '<div style="margin-top:1.25rem;">' +
-        '<button class="agri-action-button agri-action-button--primary" style="width:100%;" onclick="window.location.href=\'heatmaps.html\'">' +
+        '<button class="agri-action-button agri-action-button--primary" style="width:100%;" data-action="open-heatmaps-hub">' +
         'Open Full Analysis Workspace' +
         '</button>' +
         '</div>' +
@@ -820,15 +933,17 @@
       return;
     }
 
+    // IMPORTANT: destroy the Leaflet map BEFORE replacing innerHTML
+    // so the map can clean up while its DOM container still exists.
+    // This prevents the black map bug when re-mounting satellite view.
+    destroyMap();
+
     state.section.innerHTML = buildSectionHtml();
     state.section.dataset.agriRendered = "true";
 
     if (state.mode === "satellite") {
       mountSatelliteMap();
-      return;
     }
-
-    destroyMap();
   }
 
   function fitMapToField() {
@@ -879,6 +994,30 @@
       );
 
       satelliteLayer.addTo(map);
+
+      // Add labels overlay (place names, roads, etc.) like Google Maps
+      var labelsLayer = window.L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+          attribution: "",
+          crossOrigin: true,
+          pane: "overlayPane",
+        }
+      );
+      labelsLayer.addTo(map);
+
+      // Also add road/transportation labels
+      var roadsLayer = window.L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+          attribution: "",
+          crossOrigin: true,
+          pane: "overlayPane",
+        }
+      );
+      roadsLayer.addTo(map);
 
       const gridLayer = window.L.geoJSON(buildGridGeoJson(), {
         style: function () {
@@ -1028,6 +1167,17 @@
       state.baseLabel = "Uploaded field scan";
       state.notice = "Reverted to the uploaded field image for Heatmap view.";
       renderSection();
+      return;
+    }
+
+    if (action === "open-heatmaps-hub") {
+      setHeatmapsMode(true);
+      navigateSPA('#/dashboard');
+      if (state.section) {
+        state.section.dataset.agriRendered = '';
+      }
+      scheduleEnhancement();
+      return;
     }
   }
 
@@ -1070,6 +1220,20 @@
   }
 
   function ensureSection() {
+    // When crop health page is active, hide the heatmap section entirely
+    if (isCropHealthPage()) {
+      destroyMap();
+      if (state.section && state.section.isConnected) {
+        state.section.style.display = 'none';
+      }
+      return;
+    }
+
+    // When returning from crop health, un-hide the heatmap section
+    if (state.section) {
+      state.section.style.display = '';
+    }
+
     if (!isDashboardRoute()) {
       destroyMap();
       return;
@@ -1106,6 +1270,9 @@
       }
     }
 
+    // Update section class in case mode changed
+    state.section.className = sectionClass;
+
     getDefaultImageSrc();
 
     let insertedNow = false;
@@ -1122,6 +1289,29 @@
     if (insertedNow || !state.section.dataset.agriRendered || !state.section.children.length) {
       renderSection();
     }
+
+    // When in heatmaps or crop health mode, hide ALL other dashboard content
+    hideOtherDashboardContent(isSubPageActive());
+  }
+
+  function hideOtherDashboardContent(hide) {
+    const main = getMainElement();
+    if (!main) return;
+
+    Array.from(main.children).forEach(function (child) {
+      // Don't hide the heatmap section, or the crop health section
+      if (child === state.section || child.id === SECTION_ID) return;
+      if (child === cropHealthSection || child.id === 'crop-health-page') return;
+      if (hide) {
+        child.dataset.agriHiddenByMode = 'true';
+        child.style.display = 'none';
+      } else {
+        if (child.dataset.agriHiddenByMode) {
+          delete child.dataset.agriHiddenByMode;
+          child.style.display = '';
+        }
+      }
+    });
   }
 
   function scheduleEnhancement() {
@@ -1138,6 +1328,7 @@
       normalizeDashboardNav();
       updateTopBarProfile();
       ensureSection();
+      ensureCropHealthSection();
     });
   }
 
