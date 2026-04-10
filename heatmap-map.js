@@ -48,12 +48,42 @@
     east: 75.8293,
   };
 
+  const FIELD_AREA_HECTARES = 14.2;
   const DEFAULT_IMAGE_FALLBACK = "./assets/farm-topview-Bj11Aaqf.png";
   const HEADING_TEXT = "Field Heatmap";
   const SECTION_ID = "heatmaps";
   const SECTION_MARKER = "agri-field-analysis";
   const AUTH_KEY = "agri-eye-auth";
   const PROFILE_KEY = "agri-eye-profile";
+  const DEFAULT_BASE_LABEL = "Default field image";
+  const DEFAULT_HEATMAP_NOTICE = "Heatmap view uses the default field image as the project base layer.";
+  const DEFAULT_SATELLITE_NOTICE = "Satellite view is live. Frame the field and capture the visible area when ready.";
+  const RECOMMENDATION_ITEMS = [
+    {
+      title: "Apply Urea Fertilizer",
+      priority: "High",
+      sector: "A2",
+      description: "Support the low-vigor cells with a nitrogen application in the north-east block within the next 7 days.",
+    },
+    {
+      title: "Scout For Aphid Pressure",
+      priority: "Urgent",
+      sector: "C4",
+      description: "Inspect the pest-affected cluster and spray only after confirming leaf curl or sticky residue in the flagged zone.",
+    },
+    {
+      title: "Improve Drainage",
+      priority: "Medium",
+      sector: "C4",
+      description: "Open drainage channels and reduce standing water around the low-lying waterlogged strip before the next irrigation cycle.",
+    },
+    {
+      title: "Plan A Verification Scan",
+      priority: "Routine",
+      sector: "Full field",
+      description: "Capture a fresh heatmap after treatment so the next comparison clearly shows whether hotspot intensity is dropping.",
+    },
+  ];
   
   const PROTECTED_PATHS = ["/", "/index.html", "/dashboard", "/profile", "/history", "/help", "/contact", "/heatmaps.html"];
 
@@ -61,9 +91,11 @@
     section: null,
     defaultImage: "",
     baseImage: "",
-    baseLabel: "Uploaded field scan",
+    baseCanvas: null,
+    baseLabel: DEFAULT_BASE_LABEL,
+    sourceType: "uploaded-default",
     mode: "heatmap",
-    notice: "Heatmap view uses the uploaded field image as the project base layer.",
+    notice: DEFAULT_HEATMAP_NOTICE,
     map: null,
     mapContainer: null,
     satelliteLayer: null,
@@ -73,6 +105,9 @@
   };
 
   let enhanceScheduled = false;
+  let cropHealthSection = null;
+  let recommendationsSection = null;
+  let pendingSectionFocus = "";
 
   function escapeHtml(value) {
     return String(value)
@@ -138,6 +173,40 @@
     return isHeatmapsPage() || isCropHealthPage();
   }
 
+  function clearPendingSectionFocus() {
+    pendingSectionFocus = "";
+  }
+
+  function queueSectionFocus(sectionId) {
+    pendingSectionFocus = sectionId || "";
+  }
+
+  function flushPendingSectionFocus() {
+    if (!pendingSectionFocus) {
+      return;
+    }
+
+    const sectionId = pendingSectionFocus;
+    const target = document.getElementById(sectionId);
+
+    if (!target || target.style.display === "none") {
+      return;
+    }
+
+    pendingSectionFocus = "";
+
+    window.setTimeout(function () {
+      const resolvedTarget = document.getElementById(sectionId);
+
+      if (resolvedTarget) {
+        resolvedTarget.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 120);
+  }
+
   /**
    * Navigate within the React SPA without a full page reload.
    * Works with HashRouter by setting window.location.hash.
@@ -150,6 +219,94 @@
       return;
     }
     window.location.hash = hashRoute;
+  }
+
+  function restoreDashboardLayout(options) {
+    const settings = options || {};
+
+    setHeatmapsMode(false);
+    setCropHealthMode(false);
+    resetHeatmapState();
+
+    if (state.section) {
+      state.section.style.display = "";
+      state.section.className = SECTION_MARKER;
+      state.section.dataset.agriRendered = "";
+    }
+
+    if (cropHealthSection && cropHealthSection.isConnected) {
+      cropHealthSection.style.display = "none";
+      cropHealthSection.dataset.agriRendered = "";
+    }
+
+    if (recommendationsSection && recommendationsSection.isConnected) {
+      recommendationsSection.style.display = "";
+      recommendationsSection.dataset.agriRendered = "";
+    }
+
+    if (isDashboardRoute()) {
+      hideOtherDashboardContent(false);
+    }
+
+    if (settings.focusId) {
+      queueSectionFocus(settings.focusId);
+    } else {
+      clearPendingSectionFocus();
+    }
+  }
+
+  function openDashboardHome() {
+    restoreDashboardLayout();
+    navigateSPA('#/dashboard');
+    scheduleEnhancement();
+  }
+
+  function openDashboardSection(sectionId) {
+    restoreDashboardLayout({ focusId: sectionId });
+    navigateSPA('#/dashboard');
+    scheduleEnhancement();
+  }
+
+  function openHeatmapsWorkspace() {
+    clearPendingSectionFocus();
+    setHeatmapsMode(true);
+    setCropHealthMode(false);
+
+    if (isDashboardRoute()) {
+      hideOtherDashboardContent(true);
+    }
+
+    if (cropHealthSection && cropHealthSection.isConnected) {
+      cropHealthSection.style.display = "none";
+    }
+
+    navigateSPA('#/dashboard');
+
+    if (state.section) {
+      state.section.dataset.agriRendered = "";
+    }
+
+    scheduleEnhancement();
+  }
+
+  function openCropHealthWorkspace() {
+    clearPendingSectionFocus();
+    setCropHealthMode(true);
+    resetHeatmapState();
+
+    if (state.section) {
+      state.section.className = SECTION_MARKER;
+      state.section.dataset.agriRendered = "";
+    }
+
+    if (isDashboardRoute()) {
+      hideOtherDashboardContent(true);
+    }
+
+    navigateSPA('#/dashboard');
+    ensureCropHealthSection();
+    normalizeDashboardNav();
+    scheduleEnhancement();
   }
 
   function isProtectedPath(pathname) {
@@ -249,6 +406,7 @@
     const navLinks = Array.from(document.querySelectorAll('nav a, header a, aside a'));
     let heatmapLinkFound = false;
     let cropHealthLinkFound = false;
+    let recommendationsLinkFound = false;
     let dashboardLink = null;
 
     navLinks.forEach(function (link) {
@@ -256,10 +414,12 @@
       const text = link.textContent.trim().toLowerCase();
       const isHeatmap = text.includes('heatmap') || (href && href.includes('heatmap'));
       const isDashboard = text === 'dashboard' || (href && (href === '/' || href === '/dashboard' || href === 'index.html' || href === 'dashboard'));
+      const isRecommendations = !isHeatmap && !isDashboard && (text.includes('recommendation') || (href && href.includes('recommendation')));
 
       // Handle Heatmap Link — navigate to #/dashboard within the SPA, with heatmaps mode
       if (isHeatmap) {
         link.setAttribute('href', '#/dashboard');
+        link.dataset.agriNavRole = 'heatmaps';
         heatmapLinkFound = true;
         
         if (!link.dataset.agriHijacked) {
@@ -267,13 +427,7 @@
           link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            setHeatmapsMode(true);
-            navigateSPA('#/dashboard');
-            // Force re-render of the heatmaps section
-            if (state.section) {
-              state.section.dataset.agriRendered = '';
-            }
-            scheduleEnhancement();
+            openHeatmapsWorkspace();
           });
         }
 
@@ -298,17 +452,7 @@
           link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            setCropHealthMode(true);
-            // Immediately hide heatmap section if visible
-            if (state.section) {
-              state.section.className = SECTION_MARKER;
-              state.section.dataset.agriRendered = '';
-            }
-            hideOtherDashboardContent(true);
-            navigateSPA('#/dashboard');
-            // Force immediate re-render
-            ensureCropHealthSection();
-            normalizeDashboardNav();
+            openCropHealthWorkspace();
           });
         }
 
@@ -318,6 +462,21 @@
         } else {
           link.removeAttribute('data-agri-active');
           link.style.cssText = '';
+        }
+      }
+
+      if (isRecommendations) {
+        link.setAttribute('href', '#/dashboard');
+        link.dataset.agriNavRole = 'recommendations';
+        recommendationsLinkFound = true;
+
+        if (!link.dataset.agriHijacked) {
+          link.dataset.agriHijacked = 'true';
+          link.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openDashboardSection('recommendations');
+          });
         }
       }
       
@@ -331,17 +490,7 @@
           link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            setHeatmapsMode(false);
-            setCropHealthMode(false);
-            // Immediately restore hidden content
-            hideOtherDashboardContent(false);
-            // Force re-render of heatmap section with non-enlarged mode
-            if (state.section) {
-              state.section.className = SECTION_MARKER;
-              state.section.dataset.agriRendered = '';
-            }
-            navigateSPA('#/dashboard');
-            scheduleEnhancement();
+            openDashboardHome();
           });
         }
 
@@ -368,18 +517,14 @@
         const newLink = heatmapLi.querySelector('a');
         if (newLink) {
           newLink.setAttribute('href', '#/dashboard');
+          newLink.dataset.agriNavRole = 'heatmaps';
           newLink.removeAttribute('data-agriHijacked');
           
           // Add click listener — use SPA navigation with heatmaps mode
           newLink.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            setHeatmapsMode(true);
-            navigateSPA('#/dashboard');
-            if (state.section) {
-              state.section.dataset.agriRendered = '';
-            }
-            scheduleEnhancement();
+            openHeatmapsWorkspace();
           });
           
           // Update text and icon if possible
@@ -479,6 +624,9 @@
 
     if (!state.baseImage) {
       state.baseImage = state.defaultImage;
+      state.baseCanvas = null;
+      state.baseLabel = DEFAULT_BASE_LABEL;
+      state.sourceType = "uploaded-default";
     }
 
     return state.defaultImage;
@@ -576,6 +724,207 @@
     });
 
     return totals;
+  }
+
+  function getTotalCells() {
+    return GRID_VALUES.length * GRID_VALUES[0].length;
+  }
+
+  function getHighRiskCount(stats) {
+    const sourceStats = stats || getStatusStats();
+    return sourceStats[2].count + sourceStats[3].count;
+  }
+
+  function getCellAreaHectares() {
+    return (FIELD_AREA_HECTARES / getTotalCells()).toFixed(2);
+  }
+
+  function getHeatmapSourceLabel() {
+    if (state.sourceType === "satellite-capture") {
+      return "Captured satellite screenshot";
+    }
+
+    if (state.sourceType === "uploaded-custom") {
+      return "Custom uploaded image";
+    }
+
+    return DEFAULT_BASE_LABEL;
+  }
+
+  function getPriorityMacroSectors(limit) {
+    const sectors = {};
+
+    GRID_VALUES.forEach(function (row, rowIndex) {
+      row.forEach(function (value, columnIndex) {
+        const sectorKey = macroSectorFor(rowIndex, columnIndex);
+        const sector = sectors[sectorKey] || {
+          sector: sectorKey,
+          healthyCount: 0,
+          nutrientCount: 0,
+          pestCount: 0,
+          waterloggedCount: 0,
+          priorityCount: 0,
+          totalCells: 0,
+        };
+
+        sector.totalCells += 1;
+
+        if (value === 0) {
+          sector.healthyCount += 1;
+        } else if (value === 1) {
+          sector.nutrientCount += 1;
+        } else if (value === 2) {
+          sector.pestCount += 1;
+          sector.priorityCount += 1;
+        } else if (value === 3) {
+          sector.waterloggedCount += 1;
+          sector.priorityCount += 1;
+        }
+
+        sectors[sectorKey] = sector;
+      });
+    });
+
+    return Object.values(sectors)
+      .sort(function (left, right) {
+        if (right.priorityCount !== left.priorityCount) {
+          return right.priorityCount - left.priorityCount;
+        }
+
+        if (right.nutrientCount !== left.nutrientCount) {
+          return right.nutrientCount - left.nutrientCount;
+        }
+
+        return left.sector.localeCompare(right.sector);
+      })
+      .slice(0, limit || 4);
+  }
+
+  function describeHotspot(item) {
+    const parts = [];
+
+    if (item.pestCount) {
+      parts.push(item.pestCount + " pest alerts");
+    }
+
+    if (item.waterloggedCount) {
+      parts.push(item.waterloggedCount + " waterlogged cells");
+    }
+
+    if (!parts.length && item.nutrientCount) {
+      parts.push(item.nutrientCount + " nutrient warning cells");
+    }
+
+    if (!parts.length) {
+      parts.push(item.healthyCount + " stable cells");
+    }
+
+    return parts.join(", ");
+  }
+
+  function buildHotspotListHtml(limit) {
+    const hotspots = getPriorityMacroSectors(limit);
+
+    return hotspots
+      .map(function (item, index) {
+        const issueCount = item.priorityCount || item.nutrientCount || item.healthyCount;
+        const issueLabel =
+          item.priorityCount > 0
+            ? issueCount + " critical cells"
+            : item.nutrientCount > 0
+              ? issueCount + " nutrient flags"
+              : issueCount + " stable cells";
+
+        return (
+          '<div class="agri-hotspot-item">' +
+          '<div class="agri-hotspot-item__rank">0' +
+          (index + 1) +
+          "</div>" +
+          '<div class="agri-hotspot-item__content">' +
+          "<strong>Sector " +
+          escapeHtml(item.sector) +
+          "</strong>" +
+          "<span>" +
+          escapeHtml(issueLabel + " | " + describeHotspot(item)) +
+          "</span>" +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function getLeadHotspotSummary() {
+    const hotspot = getPriorityMacroSectors(1)[0];
+
+    if (!hotspot) {
+      return "No concentrated hotspot is standing out in the current heatmap.";
+    }
+
+    return (
+      "Sector " +
+      hotspot.sector +
+      " is the main hotspot with " +
+      describeHotspot(hotspot) +
+      "."
+    );
+  }
+
+  function getOverallHealthScore(stats) {
+    const sourceStats = stats || getStatusStats();
+    const weightedTotal =
+      sourceStats[0].count * 1 +
+      sourceStats[1].count * 0.72 +
+      sourceStats[2].count * 0.4 +
+      sourceStats[3].count * 0.32;
+
+    return Math.round((weightedTotal / getTotalCells()) * 100);
+  }
+
+  function getDominantStressLabel(stats) {
+    const sourceStats = stats || getStatusStats();
+    const stressStats = [sourceStats[1], sourceStats[2], sourceStats[3]].sort(function (left, right) {
+      return right.count - left.count;
+    });
+
+    return stressStats[0] && stressStats[0].count > 0 ? stressStats[0].label : "Stable Conditions";
+  }
+
+  function resetHeatmapState() {
+    const defaultImage = getDefaultImageSrc();
+
+    destroyMap();
+    state.baseImage = defaultImage;
+    state.baseCanvas = null;
+    state.baseLabel = DEFAULT_BASE_LABEL;
+    state.sourceType = "uploaded-default";
+    state.mode = "heatmap";
+    state.notice = DEFAULT_HEATMAP_NOTICE;
+    state.capturePending = false;
+  }
+
+  function syncHeatmapStateForMode() {
+    if (isHeatmapsPage()) {
+      return;
+    }
+
+    const defaultImage = getDefaultImageSrc();
+    const needsReset =
+      state.mode !== "heatmap" ||
+      state.capturePending ||
+      !!state.baseCanvas ||
+      state.baseImage !== defaultImage ||
+      state.baseLabel !== DEFAULT_BASE_LABEL ||
+      state.sourceType !== "uploaded-default" ||
+      state.notice !== DEFAULT_HEATMAP_NOTICE;
+
+    if (needsReset) {
+      resetHeatmapState();
+
+      if (state.section) {
+        state.section.dataset.agriRendered = "";
+      }
+    }
   }
 
   function buildHeatmapGridHtml() {
@@ -686,33 +1035,42 @@
 
   function buildHeatmapSidebarHtml() {
     const stats = getStatusStats();
-    const highRiskCount = stats[2].count + stats[3].count;
-    const imageLabel =
-      state.baseImage && state.baseImage !== getDefaultImageSrc()
-        ? "Captured satellite screenshot"
-        : "Uploaded field scan";
+    const highRiskCount = getHighRiskCount(stats);
+    const imageLabel = getHeatmapSourceLabel();
 
     if (!isHeatmapsPage()) {
       return (
         '<div class="agri-side-card">' +
         '<div class="agri-side-card__header">' +
         "<div>" +
-        '<h3 class="agri-side-card__title">Quick Summary</h3>' +
-        '<p class="agri-side-card__meta">Snapshot of current field health.</p>' +
+        '<h3 class="agri-side-card__title">Heatmap Snapshot</h3>' +
+        '<p class="agri-side-card__meta">A quick read of the current heatmap overlay.</p>' +
         "</div>" +
         "</div>" +
         '<div class="agri-side-card__body">' +
         '<div class="agri-heatmap-summary" style="margin-top:0;">' +
-        '<div class="agri-summary-chip"><strong>144</strong><span>Cells scanned</span></div>' +
-        '<div class="agri-summary-chip"><strong>' + stats[0].percentage + '%</strong><span>Healthy</span></div>' +
+        '<div class="agri-summary-chip"><strong>' +
+        getTotalCells() +
+        '</strong><span>Cells rendered</span></div>' +
+        '<div class="agri-summary-chip"><strong>4 x 4</strong><span>Macro sectors</span></div>' +
+        '<div class="agri-summary-chip"><strong>' +
+        highRiskCount +
+        '</strong><span>Flagged cells</span></div>' +
+        '<div class="agri-summary-chip"><strong>' +
+        stats[0].percentage +
+        '%</strong><span>Stable coverage</span></div>' +
         "</div>" +
-        '<div class="agri-info-item" style="margin-top:1rem;background:#fff7ed;border-color:#ffedd5;">' +
-        '<strong>Attention Required</strong>' +
-        '<span>' + highRiskCount + ' critical cells identified in the latest scan.</span>' +
+        '<div class="agri-info-list" style="margin-top:1rem;">' +
+        '<div class="agri-info-item"><strong>Base Layer</strong><span>' +
+        escapeHtml(imageLabel) +
+        "</span></div>" +
+        '<div class="agri-info-item"><strong>Hotspot Focus</strong><span>' +
+        escapeHtml(getLeadHotspotSummary()) +
+        '</span></div>' +
         '</div>' +
         '<div style="margin-top:1.25rem;">' +
         '<button class="agri-action-button agri-action-button--primary" style="width:100%;" data-action="open-heatmaps-hub">' +
-        'Open Full Analysis Workspace' +
+        'Open Heatmap Workspace' +
         '</button>' +
         '</div>' +
         "</div>" +
@@ -724,32 +1082,55 @@
       '<div class="agri-side-card">' +
       '<div class="agri-side-card__header">' +
       "<div>" +
-      '<h3 class="agri-side-card__title">Heatmap Summary</h3>' +
-      '<p class="agri-side-card__meta">Project grid overlay on the latest field image.</p>' +
+      '<h3 class="agri-side-card__title">Heatmap Overview</h3>' +
+      '<p class="agri-side-card__meta">Read the overlay, confirm the source image, and inspect the densest hotspots.</p>' +
       "</div>" +
       "</div>" +
       '<div class="agri-side-card__body">' +
       '<div class="agri-info-list">' +
-      '<div class="agri-info-item"><strong>Base Layer</strong><span>' +
+      '<div class="agri-info-item"><strong>Source Layer</strong><span>' +
       escapeHtml(imageLabel + " | " + state.baseLabel) +
       "</span></div>" +
-      '<div class="agri-info-item"><strong>Current Focus</strong><span>12 x 12 project grid mapped over Sector A with four macro blocks in each direction.</span></div>' +
-      '<div class="agri-info-item"><strong>Priority Cells</strong><span>' +
+      '<div class="agri-info-item"><strong>Grid Resolution</strong><span>12 x 12 cells across ' +
+      escapeHtml(String(FIELD_AREA_HECTARES)) +
+      ' hectares, with each cell covering about ' +
+      escapeHtml(getCellAreaHectares()) +
+      ' hectares.</span></div>' +
+      '<div class="agri-info-item"><strong>Priority Density</strong><span>' +
       highRiskCount +
-      ' cells need attention first because they show pest pressure or waterlogging.</span></div>' +
+      ' cells need fast follow-up because they show pest pressure or waterlogging on the heatmap.</span></div>' +
       "</div>" +
       '<div class="agri-heatmap-summary">' +
-      '<div class="agri-summary-chip"><strong>14.2 ha</strong><span>Mapped field area</span></div>' +
+      '<div class="agri-summary-chip"><strong>' +
+      escapeHtml(String(FIELD_AREA_HECTARES)) +
+      ' ha</strong><span>Mapped area</span></div>' +
       '<div class="agri-summary-chip"><strong>45 min</strong><span>Since last scan</span></div>' +
-      '<div class="agri-summary-chip"><strong>144</strong><span>Total grid cells</span></div>' +
+      '<div class="agri-summary-chip"><strong>' +
+      getTotalCells() +
+      '</strong><span>Total cells</span></div>' +
       '<div class="agri-summary-chip"><strong>' +
       stats[0].percentage +
-      '%</strong><span>Healthy coverage</span></div>' +
+      '%</strong><span>Stable coverage</span></div>' +
+      '<div class="agri-summary-chip"><strong>' +
+      getPriorityMacroSectors(1)[0].sector +
+      '</strong><span>Lead hotspot</span></div>' +
+      '<div class="agri-summary-chip"><strong>' +
+      getDominantStressLabel(stats) +
+      '</strong><span>Dominant stress</span></div>' +
+      "</div>" +
+      '<div class="agri-side-card__header" style="padding-left:0;padding-right:0;padding-bottom:0.7rem;padding-top:1.15rem;">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Hotspot Priority</h3>' +
+      '<p class="agri-side-card__meta">Macro sectors with the strongest concentration of flagged heatmap cells.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-hotspot-list">' +
+      buildHotspotListHtml(3) +
       "</div>" +
       '<div class="agri-side-card__header" style="padding-left:0;padding-right:0;padding-bottom:0.7rem;padding-top:1.15rem;">' +
       "<div>" +
       '<h3 class="agri-side-card__title">Legend</h3>' +
-      '<p class="agri-side-card__meta">These colors come from the current project grid.</p>' +
+      '<p class="agri-side-card__meta">These colors describe the live heatmap classification.</p>' +
       "</div>" +
       "</div>" +
       '<div class="agri-legend-list">' +
@@ -758,8 +1139,8 @@
       '<div class="agri-capture-status">' +
       escapeHtml(state.notice) +
       "</div>" +
-      (state.baseImage && state.baseImage !== getDefaultImageSrc()
-        ? '<div style="margin-top:0.9rem;"><button class="agri-action-button agri-action-button--ghost" data-action="reset-image" type="button">Use Uploaded Image Again</button></div>'
+      (state.sourceType !== "uploaded-default"
+        ? '<div style="margin-top:0.9rem;"><button class="agri-action-button agri-action-button--ghost" data-action="reset-image" type="button">Reset To Default Image</button></div>'
         : "") +
       "</div>" +
       "</div>"
@@ -819,25 +1200,30 @@
     const uploadButton = isHeatmapsPage() ? 
       '<div style="margin-top: 0.5rem;">' +
       '<input type="file" id="agri-file-upload" class="agri-upload-input" accept="image/*" />' +
-      '<button class="agri-action-button agri-action-button--secondary agri-upload-trigger" onclick="document.getElementById(\'agri-file-upload\').click()">' +
+      '<button class="agri-action-button agri-action-button--secondary agri-upload-trigger" data-action="trigger-upload" type="button">' +
       '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>' +
       'Upload New Field Image' +
       '</button>' +
       '</div>' : '';
 
+    const baseLayerHtml =
+      state.sourceType === "satellite-capture" && state.baseCanvas
+        ? '<canvas id="agri-stage-captured-canvas" class="agri-stage__image agri-stage__image--canvas" aria-label="Captured satellite heatmap"></canvas>'
+        : '<img class="agri-stage__image" src="' +
+          escapeHtml(state.baseImage || getDefaultImageSrc()) +
+          '" alt="Field scan with heatmap overlay" />';
+
     return (
       '<div class="agri-stage-card">' +
       '<div class="agri-stage-card__header">' +
       "<div>" +
-      '<h3 class="agri-stage-card__title">' + (isHeatmapsPage() ? 'Advanced Field Heatmap' : 'Heatmap View') + '</h3>' +
-      '<p class="agri-stage-card__meta">' + (isHeatmapsPage() ? 'Full-scale analysis of crop health with custom imagery support.' : 'Uploaded imagery with the project heatmap grid applied directly on top.') + '</p>' +
+      '<h3 class="agri-stage-card__title">' + (isHeatmapsPage() ? 'Heatmap Layer' : 'Heatmap Preview') + '</h3>' +
+      '<p class="agri-stage-card__meta">' + (isHeatmapsPage() ? 'Upload a new field image or keep the current layer while reviewing the full heatmap overlay.' : 'The project heatmap grid applied to the default field image.') + '</p>' +
       uploadButton +
       "</div>" +
       "</div>" +
       '<div class="agri-stage agri-stage--heatmap">' +
-      '<img class="agri-stage__image" src="' +
-      escapeHtml(state.baseImage || getDefaultImageSrc()) +
-      '" alt="Field scan with heatmap overlay" />' +
+      baseLayerHtml +
       '<div class="agri-stage__scrim"></div>' +
       '<div class="agri-stage__top-labels">' +
       topLabels +
@@ -845,7 +1231,7 @@
       '<div class="agri-stage__left-labels">' +
       leftLabels +
       "</div>" +
-      '<div class="agri-stage__badge">' + (isHeatmapsPage() ? 'Enlarged View + Custom Uploads' : 'Uploaded Image + Project Heatmap') + '</div>' +
+      '<div class="agri-stage__badge">' + (isHeatmapsPage() ? 'Full Heatmap Workspace' : 'Default Heatmap Preview') + '</div>' +
       '<div class="agri-stage__status">' +
       escapeHtml(state.baseLabel) +
       "</div>" +
@@ -879,10 +1265,10 @@
 
   function buildSectionHtml() {
     const sectionClass = isHeatmapsPage() ? SECTION_MARKER + " agri-field-analysis--enlarged" : SECTION_MARKER;
-    const title = isHeatmapsPage() ? "Dedicated Heatmaps Hub" : "Heatmaps Workspace";
+    const title = isHeatmapsPage() ? "Heatmap Analysis Workspace" : "Heatmap Preview";
     const subtitle = isHeatmapsPage() 
-      ? "Detailed field health monitoring. Upload custom imagery or capture live satellite data to generate precision heatmaps."
-      : "Summary view of crop health. Click the button to enter the full workspace for advanced tools.";
+      ? "Inspect the heatmap layer, upload refreshed imagery, or capture a satellite frame without leaving the heatmap workflow."
+      : "Review the current overlay, then open the full heatmap workspace for uploads or satellite capture.";
 
     // Ensure the section has the correct class
     if (state.section) {
@@ -894,17 +1280,17 @@
       '<div class="agri-view-switch" role="tablist" aria-label="Heatmap views">' +
       '<button type="button" class="agri-view-switch__button ' +
       (state.mode === "heatmap" ? "is-active" : "") +
-      '" data-action="switch-mode" data-mode="heatmap">Heatmap View</button>' +
+      '" data-action="switch-mode" data-mode="heatmap">Heatmap</button>' +
       '<button type="button" class="agri-view-switch__button ' +
       (state.mode === "satellite" ? "is-active" : "") +
-      '" data-action="switch-mode" data-mode="satellite">Satellite View</button>' +
+      '" data-action="switch-mode" data-mode="satellite">Satellite</button>' +
       "</div>" +
       "</div>" : "";
 
     return (
       '<div class="agri-field-analysis__header">' +
       '<div>' +
-      '<span class="agri-field-analysis__eyebrow">' + (isHeatmapsPage() ? 'Heatmaps Hub' : 'Heatmap Preview') + '</span>' +
+      '<span class="agri-field-analysis__eyebrow">' + (isHeatmapsPage() ? 'Heatmap Workspace' : 'Heatmap Preview') + '</span>' +
       '<h2 class="agri-field-analysis__title">' + title + '</h2>' +
       '<p class="agri-field-analysis__subtitle">' + subtitle + '</p>' +
       "</div>" +
@@ -915,6 +1301,77 @@
       (state.mode === "heatmap" ? buildHeatmapSidebarHtml() : buildSatelliteSidebarHtml()) +
       "</div>"
     );
+  }
+
+  function drawCanvasCover(sourceCanvas, targetCanvas) {
+    if (!sourceCanvas || !targetCanvas) {
+      return;
+    }
+
+    const rect = targetCanvas.getBoundingClientRect();
+    const displayWidth = Math.max(1, rect.width || targetCanvas.clientWidth || sourceCanvas.width);
+    const displayHeight = Math.max(1, rect.height || targetCanvas.clientHeight || sourceCanvas.height);
+    const pixelRatio = window.devicePixelRatio || 1;
+    const width = Math.max(1, Math.round(displayWidth * pixelRatio));
+    const height = Math.max(1, Math.round(displayHeight * pixelRatio));
+
+    if (targetCanvas.width !== width || targetCanvas.height !== height) {
+      targetCanvas.width = width;
+      targetCanvas.height = height;
+    }
+
+    const context = targetCanvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    context.clearRect(0, 0, width, height);
+    context.save();
+    context.scale(pixelRatio, pixelRatio);
+
+    const sourceWidth = sourceCanvas.width;
+    const sourceHeight = sourceCanvas.height;
+    const sourceRatio = sourceWidth / sourceHeight;
+    const displayRatio = displayWidth / displayHeight;
+    let cropX = 0;
+    let cropY = 0;
+    let cropWidth = sourceWidth;
+    let cropHeight = sourceHeight;
+
+    if (sourceRatio > displayRatio) {
+      cropWidth = sourceHeight * displayRatio;
+      cropX = (sourceWidth - cropWidth) / 2;
+    } else {
+      cropHeight = sourceWidth / displayRatio;
+      cropY = (sourceHeight - cropHeight) / 2;
+    }
+
+    context.drawImage(
+      sourceCanvas,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      displayWidth,
+      displayHeight
+    );
+
+    context.restore();
+  }
+
+  function mountHeatmapBaseLayer() {
+    if (!state.baseCanvas || state.mode !== "heatmap") {
+      return;
+    }
+
+    const canvasElement = document.getElementById("agri-stage-captured-canvas");
+
+    if (canvasElement instanceof HTMLCanvasElement) {
+      drawCanvasCover(state.baseCanvas, canvasElement);
+    }
   }
 
   function destroyMap() {
@@ -943,6 +1400,8 @@
 
     if (state.mode === "satellite") {
       mountSatelliteMap();
+    } else {
+      mountHeatmapBaseLayer();
     }
   }
 
@@ -1098,8 +1557,10 @@
         }
 
         try {
-          state.baseImage = canvas.toDataURL("image/png");
+          state.baseCanvas = canvas;
+          state.baseImage = "";
           state.baseLabel = "Captured from Satellite View on " + formatLocalTime(new Date());
+          state.sourceType = "satellite-capture";
           state.mode = "heatmap";
           state.notice =
             "Satellite view captured successfully. The same project grid is now shown over the captured screenshot.";
@@ -1122,8 +1583,11 @@
     const reader = new FileReader();
     reader.onload = function (e) {
       state.baseImage = e.target.result;
+      state.baseCanvas = null;
       state.baseLabel = "Uploaded: " + file.name + " (" + formatLocalTime(new Date()) + ")";
+      state.sourceType = "uploaded-custom";
       state.notice = "New field image uploaded successfully. Heatmap grid has been applied.";
+      event.target.value = "";
       renderSection();
     };
     reader.readAsDataURL(file);
@@ -1145,9 +1609,18 @@
         state.mode = mode;
         state.notice =
           mode === "heatmap"
-            ? "Heatmap view uses the uploaded field image as the project base layer."
-            : "Satellite view is live. Frame the field and capture the visible area when ready.";
+            ? DEFAULT_HEATMAP_NOTICE
+            : DEFAULT_SATELLITE_NOTICE;
         renderSection();
+      }
+      return;
+    }
+
+    if (action === "trigger-upload") {
+      const input = state.section && state.section.querySelector("#agri-file-upload");
+
+      if (input) {
+        input.click();
       }
       return;
     }
@@ -1163,20 +1636,19 @@
     }
 
     if (action === "reset-image") {
-      state.baseImage = getDefaultImageSrc();
-      state.baseLabel = "Uploaded field scan";
-      state.notice = "Reverted to the uploaded field image for Heatmap view.";
+      resetHeatmapState();
+      state.notice = "Reverted to the default field image for Heatmap view.";
       renderSection();
       return;
     }
 
+    if (action === "open-recommendations") {
+      openDashboardSection("recommendations");
+      return;
+    }
+
     if (action === "open-heatmaps-hub") {
-      setHeatmapsMode(true);
-      navigateSPA('#/dashboard');
-      if (state.section) {
-        state.section.dataset.agriRendered = '';
-      }
-      scheduleEnhancement();
+      openHeatmapsWorkspace();
       return;
     }
   }
@@ -1217,6 +1689,420 @@
     }
 
     return legacyRow;
+  }
+
+  function buildCropHealthBreakdownHtml() {
+    return getStatusStats()
+      .map(function (item) {
+        return (
+          '<div class="agri-health-bar">' +
+          '<div class="agri-health-bar__header">' +
+          "<strong>" +
+          escapeHtml(item.label) +
+          "</strong>" +
+          "<span>" +
+          item.percentage +
+          "%</span>" +
+          "</div>" +
+          '<div class="agri-health-bar__track"><span style="width:' +
+          item.percentage +
+          "%;background:" +
+          escapeHtml(item.color) +
+          ';"></span></div>' +
+          '<p class="agri-health-bar__meta">' +
+          escapeHtml(item.description) +
+          "</p>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function buildCropHealthActionsHtml() {
+    const hotspots = getPriorityMacroSectors(4);
+    const primary = hotspots[0];
+    const nutrientHotspot = hotspots
+      .slice()
+      .sort(function (left, right) {
+        return right.nutrientCount - left.nutrientCount;
+      })[0];
+    const waterHotspot = hotspots
+      .slice()
+      .sort(function (left, right) {
+        return right.waterloggedCount - left.waterloggedCount;
+      })[0];
+    const pestHotspot = hotspots
+      .slice()
+      .sort(function (left, right) {
+        return right.pestCount - left.pestCount;
+      })[0];
+
+    const actions = [
+      {
+        title: "First scouting pass",
+        detail: primary
+          ? "Start in Sector " + primary.sector + " where " + describeHotspot(primary) + " is clustering."
+          : "Begin with the areas showing the strongest visible contrast in the latest grid.",
+      },
+      {
+        title: "Nutrient follow-up",
+        detail:
+          nutrientHotspot && nutrientHotspot.nutrientCount
+            ? "Check canopy color and fertilizer availability in Sector " +
+              nutrientHotspot.sector +
+              " where " +
+              nutrientHotspot.nutrientCount +
+              " cells show nutrient stress."
+            : "No single sector is dominating the nutrient-stress pattern right now.",
+      },
+      {
+        title: "Water and pest check",
+        detail:
+          waterHotspot && waterHotspot.waterloggedCount
+            ? "Review drainage and irrigation balance in Sector " +
+              waterHotspot.sector +
+              " before the next scan because waterlogging is still active there."
+            : pestHotspot && pestHotspot.pestCount
+              ? "Prioritize pest scouting in Sector " +
+                pestHotspot.sector +
+                " where the densest pest-affected cells are concentrated."
+              : "Continue routine scouting and compare the next scan against this baseline.",
+      },
+      {
+        title: "Next scan target",
+        detail: "Re-scan after treatment or irrigation adjustment so the heatmap can confirm whether hotspot intensity drops.",
+      },
+    ];
+
+    return actions
+      .map(function (item) {
+        return (
+          '<div class="agri-action-note">' +
+          "<strong>" +
+          escapeHtml(item.title) +
+          "</strong>" +
+          "<span>" +
+          escapeHtml(item.detail) +
+          "</span>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function buildRecommendationsCardsHtml(limit) {
+    return RECOMMENDATION_ITEMS.slice(0, limit || RECOMMENDATION_ITEMS.length)
+      .map(function (item) {
+        return (
+          '<div class="agri-recommendation-card">' +
+          '<div class="agri-recommendation-card__top">' +
+          "<strong>" +
+          escapeHtml(item.title) +
+          "</strong>" +
+          '<span class="agri-recommendation-card__badge">' +
+          escapeHtml(item.priority) +
+          "</span>" +
+          "</div>" +
+          '<p class="agri-recommendation-card__meta">Focus area: ' +
+          escapeHtml(item.sector) +
+          "</p>" +
+          '<p class="agri-recommendation-card__description">' +
+          escapeHtml(item.description) +
+          "</p>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function buildRecommendationsSectionHtml() {
+    return (
+      '<div class="agri-field-analysis__header">' +
+      '<div>' +
+      '<span class="agri-field-analysis__eyebrow">Recommendations</span>' +
+      '<h2 class="agri-field-analysis__title">Recommended Next Steps</h2>' +
+      '<p class="agri-field-analysis__subtitle">Action-ready recommendations generated from the same crop-health and heatmap signals shown across the dashboard.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Priority Queue</h3>' +
+      '<p class="agri-side-card__meta">Use this list as the working order for field visits, treatment planning, and the next validation scan.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-recommendation-grid">' +
+      buildRecommendationsCardsHtml() +
+      "</div>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function buildCropHealthSectionHtml() {
+    const stats = getStatusStats();
+    const hotspots = getPriorityMacroSectors(3);
+    const leadHotspot = hotspots[0];
+    const overallHealthScore = getOverallHealthScore(stats);
+    const highRiskCount = getHighRiskCount(stats);
+    const activeMacroSectors = hotspots.filter(function (item) {
+      return item.priorityCount > 0 || item.nutrientCount > 0;
+    }).length;
+
+    return (
+      '<div class="agri-field-analysis__header">' +
+      '<div>' +
+      '<span class="agri-field-analysis__eyebrow">Crop Health</span>' +
+      '<h2 class="agri-field-analysis__title">Crop Health Review</h2>' +
+      '<p class="agri-field-analysis__subtitle">Expanded crop-health context from the latest 12 x 12 field grid, including hotspot order and action-ready field notes.</p>' +
+      "</div>" +
+      '<div class="agri-field-analysis__actions">' +
+      '<button class="agri-action-button agri-action-button--secondary" data-action="open-heatmaps-hub" type="button">Open Heatmap Workspace</button>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-crop-health__content">' +
+      '<div class="agri-crop-health__main">' +
+      '<div class="agri-side-card">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Field Overview</h3>' +
+      '<p class="agri-side-card__meta">A focused summary of crop condition using the latest heatmap classifications.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-health-metrics">' +
+      '<div class="agri-health-metric"><strong>' +
+      overallHealthScore +
+      '</strong><span>Health score</span><em>Weighted from all mapped cells</em></div>' +
+      '<div class="agri-health-metric"><strong>' +
+      stats[0].percentage +
+      '%</strong><span>Stable coverage</span><em>Cells classified as healthy crops</em></div>' +
+      '<div class="agri-health-metric"><strong>' +
+      highRiskCount +
+      '</strong><span>Critical cells</span><em>Pest or waterlogging alerts</em></div>' +
+      '<div class="agri-health-metric"><strong>' +
+      activeMacroSectors +
+      '</strong><span>Priority sectors</span><em>Macro blocks needing follow-up</em></div>' +
+      '<div class="agri-health-metric"><strong>' +
+      escapeHtml(leadHotspot ? leadHotspot.sector : "None") +
+      '</strong><span>Lead hotspot</span><em>First block to inspect on foot</em></div>' +
+      '<div class="agri-health-metric"><strong>45 min</strong><span>Latest scan age</span><em>Best used as a same-day field guide</em></div>' +
+      "</div>" +
+      '<div class="agri-info-item" style="margin-top:1rem;"><strong>Current read</strong><span>' +
+      escapeHtml("The map is largely stable, but " + highRiskCount + " cells still need near-term review and " + getDominantStressLabel(stats).toLowerCase() + " is the strongest active stress pattern.") +
+      "</span></div>" +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Priority Zones</h3>' +
+      '<p class="agri-side-card__meta">Recommended scouting order based on the concentration of abnormal cells.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-hotspot-list">' +
+      buildHotspotListHtml(3) +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Action Notes</h3>' +
+      '<p class="agri-side-card__meta">Short follow-up steps to turn the current crop-health read into field action.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-action-note-list">' +
+      buildCropHealthActionsHtml() +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Recommended Next Steps</h3>' +
+      '<p class="agri-side-card__meta">These recommendations extend the crop-health review and match the highest-risk zones on the current field map.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-recommendation-grid agri-recommendation-grid--compact">' +
+      buildRecommendationsCardsHtml(3) +
+      "</div>" +
+      '<div style="margin-top:1rem;">' +
+      '<button class="agri-action-button agri-action-button--primary" data-action="open-recommendations" type="button">Open Full Recommendations</button>' +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-crop-health__side">' +
+      '<div class="agri-side-card">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Condition Breakdown</h3>' +
+      '<p class="agri-side-card__meta">Share of the field in each crop-health category.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-health-bar-list">' +
+      buildCropHealthBreakdownHtml() +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">Monitoring Notes</h3>' +
+      '<p class="agri-side-card__meta">Extra context to help compare this crop-health read with the next scan.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-info-list">' +
+      '<div class="agri-info-item"><strong>Analysis source</strong><span>' +
+      escapeHtml(getHeatmapSourceLabel() + " | " + state.baseLabel) +
+      "</span></div>" +
+      '<div class="agri-info-item"><strong>Mapped area</strong><span>' +
+      escapeHtml(String(FIELD_AREA_HECTARES) + " hectares with cells of about " + getCellAreaHectares() + " hectares each.") +
+      "</span></div>" +
+      '<div class="agri-info-item"><strong>Lead hotspot</strong><span>' +
+      escapeHtml(leadHotspot ? "Sector " + leadHotspot.sector + " is currently the first field-check target." : "No lead hotspot detected.") +
+      "</span></div>" +
+      '<div class="agri-info-item"><strong>Next comparison</strong><span>Capture another scan after the next treatment cycle to verify whether hotspot density drops in the same sectors.</span></div>' +
+      '<div class="agri-info-item"><strong>Recommended workflow</strong><span>Scout the lead hotspot, apply the matching treatment, then jump to Recommendations for the full action queue and scheduling order.</span></div>' +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderCropHealthSection() {
+    if (!cropHealthSection) {
+      return;
+    }
+
+    cropHealthSection.innerHTML = buildCropHealthSectionHtml();
+    cropHealthSection.dataset.agriRendered = "true";
+  }
+
+  function renderRecommendationsSection() {
+    if (!recommendationsSection) {
+      return;
+    }
+
+    recommendationsSection.innerHTML = buildRecommendationsSectionHtml();
+    recommendationsSection.dataset.agriRendered = "true";
+  }
+
+  function ensureRecommendationsSection() {
+    if (!isDashboardRoute()) {
+      if (recommendationsSection && recommendationsSection.isConnected) {
+        recommendationsSection.style.display = "none";
+      }
+      return;
+    }
+
+    const main = getMainElement();
+
+    if (!main) {
+      return;
+    }
+
+    if (recommendationsSection && !document.body.contains(recommendationsSection)) {
+      recommendationsSection = null;
+    }
+
+    if (!recommendationsSection) {
+      const existingSection = document.getElementById("recommendations");
+
+      if (existingSection && existingSection.classList.contains("agri-recommendations")) {
+        recommendationsSection = existingSection;
+      } else {
+        recommendationsSection = document.createElement("section");
+        recommendationsSection.id = "recommendations";
+        recommendationsSection.className = SECTION_MARKER + " agri-recommendations";
+      }
+    }
+
+    recommendationsSection.className = SECTION_MARKER + " agri-recommendations";
+
+    if (!recommendationsSection.isConnected) {
+      main.appendChild(recommendationsSection);
+    }
+
+    if (isSubPageActive()) {
+      recommendationsSection.style.display = "none";
+      return;
+    }
+
+    recommendationsSection.style.display = "";
+    renderRecommendationsSection();
+  }
+
+  function ensureCropHealthSection() {
+    if (!isDashboardRoute()) {
+      if (cropHealthSection && cropHealthSection.isConnected) {
+        cropHealthSection.style.display = "none";
+      }
+      return;
+    }
+
+    const main = getMainElement();
+
+    if (!main) {
+      return;
+    }
+
+    if (cropHealthSection && !document.body.contains(cropHealthSection)) {
+      cropHealthSection = null;
+    }
+
+    if (!cropHealthSection) {
+      const existingSection = document.getElementById("crop-health-page");
+
+      if (existingSection && existingSection.classList.contains("agri-crop-health")) {
+        cropHealthSection = existingSection;
+      } else {
+        cropHealthSection = document.createElement("section");
+        cropHealthSection.id = "crop-health-page";
+        cropHealthSection.className = SECTION_MARKER + " agri-crop-health agri-field-analysis--enlarged";
+        cropHealthSection.addEventListener("click", handleSectionClick);
+      }
+    }
+
+    cropHealthSection.className = SECTION_MARKER + " agri-crop-health agri-field-analysis--enlarged";
+
+    if (!isCropHealthPage()) {
+      if (cropHealthSection.isConnected) {
+        cropHealthSection.style.display = "none";
+      }
+      return;
+    }
+
+    const legacyRow = normalizeLegacyLayout();
+
+    cropHealthSection.style.display = "";
+
+    if (!cropHealthSection.isConnected) {
+      if (state.section && state.section.isConnected && state.section.parentElement) {
+        state.section.parentElement.insertBefore(cropHealthSection, state.section);
+      } else if (legacyRow && legacyRow.parentElement) {
+        legacyRow.parentElement.insertBefore(cropHealthSection, legacyRow);
+      } else {
+        main.appendChild(cropHealthSection);
+      }
+    }
+
+    hideOtherDashboardContent(true);
+
+    if (state.section && state.section.isConnected) {
+      state.section.style.display = "none";
+    }
+
+    renderCropHealthSection();
   }
 
   function ensureSection() {
@@ -1274,6 +2160,7 @@
     state.section.className = sectionClass;
 
     getDefaultImageSrc();
+    syncHeatmapStateForMode();
 
     let insertedNow = false;
 
@@ -1329,11 +2216,14 @@
       updateTopBarProfile();
       ensureSection();
       ensureCropHealthSection();
+      ensureRecommendationsSection();
+      flushPendingSectionFocus();
     });
   }
 
   document.addEventListener("DOMContentLoaded", scheduleEnhancement);
   window.addEventListener("load", scheduleEnhancement);
+  window.addEventListener("resize", scheduleEnhancement);
   window.addEventListener("hashchange", scheduleEnhancement);
   window.addEventListener("popstate", scheduleEnhancement);
   window.addEventListener("storage", scheduleEnhancement);

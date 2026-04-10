@@ -47,11 +47,17 @@
   flex-wrap: wrap;
 }
 
+a[data-agri-nav-role="heatmaps"] {
+  font-size: 12.5px !important;
+  padding-top: 0.55rem !important;
+  padding-bottom: 0.55rem !important;
+}
+
 .agri-view-switch {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem;
+  gap: 0.2rem;
+  padding: 0.22rem;
   border-radius: 999px;
   background: #f3f4f6;
 }
@@ -61,14 +67,14 @@
   border: 0;
   border-radius: 999px;
   cursor: pointer;
-  font: 600 0.88rem/1 Poppins, sans-serif;
+  font: 600 0.82rem/1 Poppins, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .agri-view-switch__button {
   background: transparent;
   color: #6b7280;
-  padding: 0.8rem 1rem;
+  padding: 0.68rem 0.9rem;
 }
 
 .agri-view-switch__button.is-active {
@@ -199,6 +205,11 @@
   height: 100%;
   object-fit: cover;
   filter: brightness(0.94) contrast(1.06) saturate(1.05);
+}
+
+.agri-stage__image--canvas {
+  display: block;
+  background: #0f172a;
 }
 
 .agri-stage__scrim {
@@ -387,6 +398,194 @@
   font: 400 0.78rem/1.35 Roboto, sans-serif;
 }
 
+.agri-hotspot-list,
+.agri-action-note-list,
+.agri-health-bar-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.agri-hotspot-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.8rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.agri-hotspot-item__rank {
+  min-width: 2rem;
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #166534;
+  font: 700 0.82rem/1 Poppins, sans-serif;
+}
+
+.agri-hotspot-item__content strong,
+.agri-action-note strong,
+.agri-health-bar__header strong,
+.agri-health-metric strong {
+  display: block;
+  color: #111827;
+  font: 700 0.9rem/1.3 Poppins, sans-serif;
+}
+
+.agri-hotspot-item__content span,
+.agri-action-note span,
+.agri-health-bar__meta,
+.agri-health-metric span,
+.agri-health-metric em {
+  color: #6b7280;
+  font: 400 0.82rem/1.45 Roboto, sans-serif;
+}
+
+.agri-hotspot-item__content span,
+.agri-action-note span,
+.agri-health-metric em {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.agri-crop-health__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.9fr);
+  gap: 1.25rem;
+}
+
+.agri-crop-health__main,
+.agri-crop-health__side {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.agri-health-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.agri-health-metric {
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.agri-health-metric strong {
+  font-size: 1.22rem;
+}
+
+.agri-health-metric span {
+  display: block;
+  margin-top: 0.22rem;
+}
+
+.agri-health-metric em {
+  display: block;
+  margin-top: 0.14rem;
+  font-style: normal;
+}
+
+.agri-action-note {
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid #eef2f7;
+  background: #f9fafb;
+}
+
+.agri-recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.agri-recommendation-grid--compact {
+  grid-template-columns: 1fr;
+}
+
+.agri-recommendation-card {
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.agri-recommendation-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.agri-recommendation-card__top strong {
+  display: block;
+  color: #111827;
+  font: 700 0.92rem/1.35 Poppins, sans-serif;
+}
+
+.agri-recommendation-card__badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #166534;
+  padding: 0.35rem 0.65rem;
+  font: 700 0.72rem/1 Poppins, sans-serif;
+}
+
+.agri-recommendation-card__meta,
+.agri-recommendation-card__description {
+  margin: 0;
+  color: #6b7280;
+  font: 400 0.82rem/1.5 Roboto, sans-serif;
+}
+
+.agri-recommendation-card__meta {
+  margin-top: 0.45rem;
+}
+
+.agri-recommendation-card__description {
+  margin-top: 0.35rem;
+}
+
+.agri-health-bar {
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid #eef2f7;
+  background: #f9fafb;
+}
+
+.agri-health-bar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.agri-health-bar__header span {
+  color: #374151;
+  font: 600 0.82rem/1 Poppins, sans-serif;
+}
+
+.agri-health-bar__track {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.agri-health-bar__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
 .agri-capture-status {
   margin-top: 0.9rem;
   padding: 0.9rem 1rem;
@@ -437,6 +636,14 @@
   .agri-field-analysis__content {
     grid-template-columns: 1fr;
   }
+
+  .agri-crop-health__content {
+    grid-template-columns: 1fr;
+  }
+
+  .agri-recommendation-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -461,6 +668,10 @@
   .agri-view-switch__button {
     flex: 1 1 0;
     text-align: center;
+  }
+
+  .agri-health-metrics {
+    grid-template-columns: 1fr;
   }
 
   .agri-stage {
