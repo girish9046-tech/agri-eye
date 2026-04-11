@@ -509,11 +509,135 @@ a[data-agri-nav-role="heatmaps"] {
   grid-template-columns: 1fr;
 }
 
-.agri-recommendation-card {
+.agri-recommendation-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.agri-recommendation-hero__main {
+  border-radius: 1rem;
+  border: 1px solid #bbf7d0;
+  background:
+    linear-gradient(135deg, rgba(22, 163, 74, 0.95), rgba(20, 184, 166, 0.92)),
+    #16a34a;
+  color: #ffffff;
+  padding: 1.2rem;
+}
+
+.agri-recommendation-hero__main span {
+  display: block;
+  color: rgba(255, 255, 255, 0.82);
+  font: 700 0.72rem/1 Poppins, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agri-recommendation-hero__main strong {
+  display: block;
+  margin-top: 0.45rem;
+  font: 800 2.35rem/1 Poppins, sans-serif;
+}
+
+.agri-recommendation-hero__main p {
+  margin: 0.55rem 0 0;
+  color: rgba(255, 255, 255, 0.9);
+  font: 500 0.88rem/1.55 Roboto, sans-serif;
+}
+
+.agri-recommendation-hero__bars {
+  display: grid;
+  gap: 0.75rem;
   border-radius: 1rem;
   border: 1px solid #e5e7eb;
   background: #ffffff;
   padding: 1rem;
+}
+
+.agri-signal-bar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.agri-signal-bar__header span,
+.agri-signal-bar__header strong {
+  color: #374151;
+  font: 700 0.78rem/1 Poppins, sans-serif;
+}
+
+.agri-signal-bar__track {
+  height: 0.58rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef2f7;
+}
+
+.agri-signal-bar__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #22c55e;
+}
+
+.agri-signal-bar--pest .agri-signal-bar__track span {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+.agri-signal-bar--nutrient .agri-signal-bar__track span {
+  background: linear-gradient(90deg, #facc15, #22c55e);
+}
+
+.agri-signal-bar--water .agri-signal-bar__track span {
+  background: linear-gradient(90deg, #38bdf8, #2563eb);
+}
+
+.agri-signal-bar--weather .agri-signal-bar__track span {
+  background: linear-gradient(90deg, #a3e635, #14b8a6);
+}
+
+.agri-recommendation-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, #ffffff, #f9fafb);
+  padding: 1rem;
+}
+
+.agri-recommendation-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.32rem;
+  background: #22c55e;
+}
+
+.agri-recommendation-card--nutrient::before {
+  background: linear-gradient(180deg, #facc15, #22c55e);
+}
+
+.agri-recommendation-card--water::before {
+  background: linear-gradient(180deg, #38bdf8, #2563eb);
+}
+
+.agri-recommendation-card--pest::before {
+  background: linear-gradient(180deg, #f97316, #ef4444);
+}
+
+.agri-recommendation-card--weather::before {
+  background: linear-gradient(180deg, #a3e635, #14b8a6);
+}
+
+.agri-recommendation-card--profit::before {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+}
+
+.agri-recommendation-card--scan::before {
+  background: linear-gradient(180deg, #94a3b8, #64748b);
 }
 
 .agri-recommendation-card__top {
@@ -536,6 +660,79 @@ a[data-agri-nav-role="heatmaps"] {
   color: #166534;
   padding: 0.35rem 0.65rem;
   font: 700 0.72rem/1 Poppins, sans-serif;
+}
+
+.agri-recommendation-card__badge--urgent {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.agri-recommendation-card__badge--high {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.agri-recommendation-card__badge--medium {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.agri-recommendation-card__badge--routine {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.agri-recommendation-card__signal {
+  height: 0.45rem;
+  margin-top: 0.85rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.agri-recommendation-card__signal span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #14b8a6);
+}
+
+.agri-recommendation-card--nutrient .agri-recommendation-card__signal span {
+  background: linear-gradient(90deg, #facc15, #22c55e);
+}
+
+.agri-recommendation-card--water .agri-recommendation-card__signal span {
+  background: linear-gradient(90deg, #38bdf8, #2563eb);
+}
+
+.agri-recommendation-card--pest .agri-recommendation-card__signal span {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+.agri-recommendation-card--weather .agri-recommendation-card__signal span {
+  background: linear-gradient(90deg, #a3e635, #14b8a6);
+}
+
+.agri-recommendation-card--scan .agri-recommendation-card__signal span {
+  background: linear-gradient(90deg, #94a3b8, #64748b);
+}
+
+.agri-recommendation-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+}
+
+.agri-recommendation-card__score strong {
+  color: #111827;
+  font: 800 1rem/1 Poppins, sans-serif;
+}
+
+.agri-recommendation-card__score span {
+  color: #9ca3af;
+  font: 600 0.72rem/1 Poppins, sans-serif;
+  text-transform: uppercase;
 }
 
 .agri-recommendation-card__meta,
@@ -638,6 +835,10 @@ a[data-agri-nav-role="heatmaps"] {
   }
 
   .agri-crop-health__content {
+    grid-template-columns: 1fr;
+  }
+
+  .agri-recommendation-hero {
     grid-template-columns: 1fr;
   }
 

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recommendations | AGRI-EYE Smart Farm Monitoring</title>
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <script>
+      // Legacy recommendations.html - redirect to the SPA dashboard with recommendations mode
+      try {
+        if (window.localStorage.getItem("agri-eye-auth") === "true") {
+          try {
+            window.sessionStorage.removeItem("agri-eye-heatmaps-mode");
+            window.sessionStorage.removeItem("agri-eye-crop-health-mode");
+            window.sessionStorage.setItem("agri-eye-recommendations-mode", "true");
+          } catch (err) {}
+
+          window.location.replace("./#/dashboard");
+        } else {
+          window.location.replace("./#/auth");
+        }
+      } catch (e) {
+        window.location.replace("./");
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to recommendations...</p>
+  </body>
+</html>

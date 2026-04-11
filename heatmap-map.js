@@ -60,32 +60,72 @@
   const DEFAULT_SATELLITE_NOTICE = "Satellite view is live. Frame the field and capture the visible area when ready.";
   const RECOMMENDATION_ITEMS = [
     {
-      title: "Apply Urea Fertilizer",
+      title: "Apply Split Nitrogen Feeding",
       priority: "High",
       sector: "A2",
-      description: "Support the low-vigor cells with a nitrogen application in the north-east block within the next 7 days.",
+      score: 82,
+      theme: "nutrient",
+      description: "Use a split urea or NPK top-dress in low-vigor cells instead of a broad full-field dose, then verify response after 7 days.",
+    },
+    {
+      title: "Correct Micronutrient Gap",
+      priority: "High",
+      sector: "B2",
+      score: 74,
+      theme: "nutrient",
+      description: "Add zinc and sulphur support where yellowing continues after nitrogen correction, especially in sandy or low organic-matter soil.",
+    },
+    {
+      title: "Irrigate By Soil Moisture",
+      priority: "High",
+      sector: "Full field",
+      score: 68,
+      theme: "water",
+      description: "Keep moisture near the optimal band for the selected crop and avoid watering waterlogged cells until surface drying improves.",
     },
     {
       title: "Scout For Aphid Pressure",
       priority: "Urgent",
       sector: "C4",
+      score: 91,
+      theme: "pest",
       description: "Inspect the pest-affected cluster and spray only after confirming leaf curl or sticky residue in the flagged zone.",
     },
     {
       title: "Improve Drainage",
       priority: "Medium",
       sector: "C4",
+      score: 57,
+      theme: "water",
       description: "Open drainage channels and reduce standing water around the low-lying waterlogged strip before the next irrigation cycle.",
     },
     {
-      title: "Plan A Verification Scan",
+      title: "Choose Weather-Safe Crop Window",
+      priority: "Medium",
+      sector: "Full field",
+      score: 63,
+      theme: "weather",
+      description: "Prefer short-duration crops if rainfall risk increases, and delay sowing or spraying if the upcoming forecast shows heavy rain.",
+    },
+    {
+      title: "Prioritize Profit Crop Mix",
+      priority: "Medium",
+      sector: "A1-D4",
+      score: 71,
+      theme: "profit",
+      description: "Match crop choice with soil moisture, heatmap health, and local price trend; keep high-input crops only in stable, well-drained blocks.",
+    },
+    {
+      title: "Plan Verification Scan",
       priority: "Routine",
       sector: "Full field",
+      score: 46,
+      theme: "scan",
       description: "Capture a fresh heatmap after treatment so the next comparison clearly shows whether hotspot intensity is dropping.",
     },
   ];
   
-  const PROTECTED_PATHS = ["/", "/index.html", "/dashboard", "/profile", "/history", "/help", "/contact", "/heatmaps.html"];
+  const PROTECTED_PATHS = ["/", "/index.html", "/dashboard", "/profile", "/history", "/help", "/contact", "/heatmaps.html", "/recommendations.html"];
 
   const state = {
     section: null,
@@ -127,7 +167,8 @@
     const isRoot = path === '/' || path === '/index.html' || path.endsWith('/index.html');
     const isDashboard = path === '/dashboard' || path.endsWith('/dashboard');
     const isHeatmaps = path.includes('heatmaps.html') || path.endsWith('heatmaps.html');
-    return isHashDashboard || ((isRoot || isDashboard) && hash === '') || isHeatmaps;
+    const isRecommendations = path.includes('recommendations.html') || path.endsWith('recommendations.html');
+    return isHashDashboard || ((isRoot || isDashboard) && hash === '') || isHeatmaps || isRecommendations;
   }
 
   function isHeatmapsPage() {
@@ -143,6 +184,7 @@
       if (enabled) {
         sessionStorage.setItem('agri-eye-heatmaps-mode', 'true');
         sessionStorage.removeItem('agri-eye-crop-health-mode');
+        sessionStorage.removeItem('agri-eye-recommendations-mode');
       } else {
         sessionStorage.removeItem('agri-eye-heatmaps-mode');
       }
@@ -162,15 +204,36 @@
       if (enabled) {
         sessionStorage.setItem('agri-eye-crop-health-mode', 'true');
         sessionStorage.removeItem('agri-eye-heatmaps-mode');
+        sessionStorage.removeItem('agri-eye-recommendations-mode');
       } else {
         sessionStorage.removeItem('agri-eye-crop-health-mode');
       }
     } catch (e) { /* ignore */ }
   }
 
+  function isRecommendationsPage() {
+    try {
+      return sessionStorage.getItem('agri-eye-recommendations-mode') === 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function setRecommendationsMode(enabled) {
+    try {
+      if (enabled) {
+        sessionStorage.setItem('agri-eye-recommendations-mode', 'true');
+        sessionStorage.removeItem('agri-eye-heatmaps-mode');
+        sessionStorage.removeItem('agri-eye-crop-health-mode');
+      } else {
+        sessionStorage.removeItem('agri-eye-recommendations-mode');
+      }
+    } catch (e) { /* ignore */ }
+  }
+
   /** Returns true if user is on a page mode that takes over the dashboard */
   function isSubPageActive() {
-    return isHeatmapsPage() || isCropHealthPage();
+    return isHeatmapsPage() || isCropHealthPage() || isRecommendationsPage();
   }
 
   function clearPendingSectionFocus() {
@@ -226,6 +289,7 @@
 
     setHeatmapsMode(false);
     setCropHealthMode(false);
+    setRecommendationsMode(false);
     resetHeatmapState();
 
     if (state.section) {
@@ -240,7 +304,7 @@
     }
 
     if (recommendationsSection && recommendationsSection.isConnected) {
-      recommendationsSection.style.display = "";
+      recommendationsSection.style.display = "none";
       recommendationsSection.dataset.agriRendered = "";
     }
 
@@ -262,6 +326,11 @@
   }
 
   function openDashboardSection(sectionId) {
+    if (sectionId === "recommendations") {
+      openRecommendationsWorkspace();
+      return;
+    }
+
     restoreDashboardLayout({ focusId: sectionId });
     navigateSPA('#/dashboard');
     scheduleEnhancement();
@@ -287,6 +356,34 @@
     }
 
     scheduleEnhancement();
+  }
+
+  function openRecommendationsWorkspace() {
+    clearPendingSectionFocus();
+    setRecommendationsMode(true);
+    resetHeatmapState();
+
+    if (state.section) {
+      state.section.className = SECTION_MARKER;
+      state.section.dataset.agriRendered = "";
+    }
+
+    if (isDashboardRoute()) {
+      hideOtherDashboardContent(true);
+    }
+
+    navigateSPA('#/dashboard');
+    ensureRecommendationsSection();
+    normalizeDashboardNav();
+    scheduleEnhancement();
+  }
+
+  function openAlertsPage() {
+    clearPendingSectionFocus();
+    setHeatmapsMode(false);
+    setCropHealthMode(false);
+    setRecommendationsMode(false);
+    window.location.href = "./alerts_v3.html";
   }
 
   function openCropHealthWorkspace() {
@@ -415,6 +512,7 @@
       const isHeatmap = text.includes('heatmap') || (href && href.includes('heatmap'));
       const isDashboard = text === 'dashboard' || (href && (href === '/' || href === '/dashboard' || href === 'index.html' || href === 'dashboard'));
       const isRecommendations = !isHeatmap && !isDashboard && (text.includes('recommendation') || (href && href.includes('recommendation')));
+      const isAlerts = !isHeatmap && !isDashboard && !isRecommendations && (text.includes('alert') || (href && href.includes('alert')));
 
       // Handle Heatmap Link — navigate to #/dashboard within the SPA, with heatmaps mode
       if (isHeatmap) {
@@ -478,9 +576,31 @@
             openDashboardSection('recommendations');
           });
         }
+
+        if (isRecommendationsPage()) {
+          link.setAttribute('data-agri-active', 'true');
+          link.style.cssText = 'background-color: #f0fdf4 !important; color: #15803d !important; font-weight: 600 !important;';
+        } else {
+          link.removeAttribute('data-agri-active');
+          link.style.cssText = '';
+        }
       }
       
       // Handle Dashboard Link — navigate to #/dashboard within the SPA
+      if (isAlerts) {
+        link.setAttribute('href', './alerts_v3.html');
+        link.dataset.agriNavRole = 'alerts';
+
+        if (!link.dataset.agriHijacked) {
+          link.dataset.agriHijacked = 'true';
+          link.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openAlertsPage();
+          });
+        }
+      }
+
       if (isDashboard) {
         link.setAttribute('href', '#/dashboard');
         dashboardLink = link;
@@ -558,6 +678,11 @@
   }
 
   function normalizeDashboardNav() {
+    if (window.location.hash === "#/dashboard#alerts" || window.location.hash.endsWith("#alerts")) {
+      openAlertsPage();
+      return;
+    }
+
     Array.from(document.querySelectorAll('a[href="/dashboard#field-analysis"]')).forEach(function (link) {
       link.style.display = "none";
     });
@@ -570,11 +695,18 @@
   function enforceAuthAccess() {
     const pathname = window.location.pathname;
     const isHeatmapFile = window.__AGRI_EYE_PAGE === 'heatmaps' || pathname.includes('heatmaps.html') || pathname.endsWith('heatmaps.html');
+    const isRecommendationsFile = window.__AGRI_EYE_PAGE === 'recommendations' || pathname.includes('recommendations.html') || pathname.endsWith('recommendations.html');
 
     // If on legacy heatmaps.html, redirect to the SPA dashboard with heatmaps mode
     if (isHeatmapFile && isAuthenticated()) {
       setHeatmapsMode(true);
       // Redirect to index.html with hash route for dashboard
+      window.location.replace('/#/dashboard');
+      return false;
+    }
+
+    if (isRecommendationsFile && isAuthenticated()) {
+      setRecommendationsMode(true);
       window.location.replace('/#/dashboard');
       return false;
     }
@@ -1794,15 +1926,27 @@
     return RECOMMENDATION_ITEMS.slice(0, limit || RECOMMENDATION_ITEMS.length)
       .map(function (item) {
         return (
-          '<div class="agri-recommendation-card">' +
+          '<div class="agri-recommendation-card agri-recommendation-card--' +
+          escapeHtml(item.theme || "profit") +
+          '">' +
           '<div class="agri-recommendation-card__top">' +
           "<strong>" +
           escapeHtml(item.title) +
           "</strong>" +
-          '<span class="agri-recommendation-card__badge">' +
+          '<span class="agri-recommendation-card__badge agri-recommendation-card__badge--' +
+          escapeHtml(String(item.priority).toLowerCase()) +
+          '">' +
           escapeHtml(item.priority) +
           "</span>" +
           "</div>" +
+          '<div class="agri-recommendation-card__signal">' +
+          '<span style="width:' +
+          escapeHtml(item.score || 50) +
+          '%"></span>' +
+          "</div>" +
+          '<p class="agri-recommendation-card__score"><strong>' +
+          escapeHtml(item.score || 50) +
+          '%</strong><span>AI confidence</span></p>' +
           '<p class="agri-recommendation-card__meta">Focus area: ' +
           escapeHtml(item.sector) +
           "</p>" +
@@ -1815,25 +1959,79 @@
       .join("");
   }
 
+  function buildRecommendationSignalBarsHtml() {
+    const signals = [
+      { label: "Pest urgency", value: 91, theme: "pest" },
+      { label: "Fertilizer ROI", value: 82, theme: "nutrient" },
+      { label: "Moisture balance", value: 68, theme: "water" },
+      { label: "Weather timing", value: 63, theme: "weather" },
+    ];
+
+    return signals
+      .map(function (item) {
+        return (
+          '<div class="agri-signal-bar agri-signal-bar--' +
+          escapeHtml(item.theme) +
+          '">' +
+          '<div class="agri-signal-bar__header"><span>' +
+          escapeHtml(item.label) +
+          "</span><strong>" +
+          escapeHtml(item.value) +
+          "%</strong></div>" +
+          '<div class="agri-signal-bar__track"><span style="width:' +
+          escapeHtml(item.value) +
+          '%"></span></div>' +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
   function buildRecommendationsSectionHtml() {
     return (
       '<div class="agri-field-analysis__header">' +
       '<div>' +
       '<span class="agri-field-analysis__eyebrow">Recommendations</span>' +
-      '<h2 class="agri-field-analysis__title">Recommended Next Steps</h2>' +
-      '<p class="agri-field-analysis__subtitle">Action-ready recommendations generated from the same crop-health and heatmap signals shown across the dashboard.</p>' +
+      '<h2 class="agri-field-analysis__title">AI Profit Recommendations</h2>' +
+      '<p class="agri-field-analysis__subtitle">Action-ready recommendations for fertilizer, irrigation, crop choice, weather timing, and the next validation scan.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-recommendation-hero">' +
+      '<div class="agri-recommendation-hero__main">' +
+      '<span>AI action score</span>' +
+      '<strong>84%</strong>' +
+      '<p>Focus spend on pest control, nitrogen correction, and moisture balance before the next scan.</p>' +
+      "</div>" +
+      '<div class="agri-recommendation-hero__bars">' +
+      buildRecommendationSignalBarsHtml() +
       "</div>" +
       "</div>" +
       '<div class="agri-side-card">' +
       '<div class="agri-side-card__header">' +
       "<div>" +
       '<h3 class="agri-side-card__title">Priority Queue</h3>' +
-      '<p class="agri-side-card__meta">Use this list as the working order for field visits, treatment planning, and the next validation scan.</p>' +
+      '<p class="agri-side-card__meta">Use this order for field visits, input planning, crop decisions, irrigation scheduling, and the next validation scan.</p>' +
       "</div>" +
       "</div>" +
       '<div class="agri-side-card__body">' +
       '<div class="agri-recommendation-grid">' +
       buildRecommendationsCardsHtml() +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card" style="margin-top:1rem;">' +
+      '<div class="agri-side-card__header">' +
+      "<div>" +
+      '<h3 class="agri-side-card__title">AI Decision Rule</h3>' +
+      '<p class="agri-side-card__meta">Treat only the blocks that need it first, protect the crop from avoidable water and pest stress, then confirm the result with a fresh scan.</p>' +
+      "</div>" +
+      "</div>" +
+      '<div class="agri-side-card__body">' +
+      '<div class="agri-info-list">' +
+      '<div class="agri-info-item"><strong>Fertilizer</strong><span>Use zone-based NPK or urea support for low-vigor cells, then add micronutrients only if yellowing remains.</span></div>' +
+      '<div class="agri-info-item"><strong>Water</strong><span>Irrigate by crop demand and current soil moisture; skip wet zones until drainage improves.</span></div>' +
+      '<div class="agri-info-item"><strong>Crop selection</strong><span>Prefer crops that match the current moisture pattern and upcoming weather instead of forcing one crop across every block.</span></div>' +
+      '<div class="agri-info-item"><strong>Profit timing</strong><span>Spend first where stress reduction is most likely to protect yield, then re-scan to avoid repeated unnecessary input cost.</span></div>' +
       "</div>" +
       "</div>" +
       "</div>"
@@ -2011,6 +2209,13 @@
       return;
     }
 
+    if (!isRecommendationsPage()) {
+      if (recommendationsSection && recommendationsSection.isConnected) {
+        recommendationsSection.style.display = "none";
+      }
+      return;
+    }
+
     if (recommendationsSection && !document.body.contains(recommendationsSection)) {
       recommendationsSection = null;
     }
@@ -2027,18 +2232,31 @@
       }
     }
 
-    recommendationsSection.className = SECTION_MARKER + " agri-recommendations";
+    recommendationsSection.className =
+      SECTION_MARKER +
+      " agri-recommendations" +
+      (isRecommendationsPage() ? " agri-field-analysis--enlarged" : "");
 
     if (!recommendationsSection.isConnected) {
-      main.appendChild(recommendationsSection);
-    }
-
-    if (isSubPageActive()) {
-      recommendationsSection.style.display = "none";
-      return;
+      if (state.section && state.section.isConnected && state.section.parentElement) {
+        state.section.parentElement.insertBefore(recommendationsSection, state.section);
+      } else {
+        main.appendChild(recommendationsSection);
+      }
     }
 
     recommendationsSection.style.display = "";
+
+    hideOtherDashboardContent(true);
+
+    if (state.section && state.section.isConnected) {
+      state.section.style.display = "none";
+    }
+
+    if (cropHealthSection && cropHealthSection.isConnected) {
+      cropHealthSection.style.display = "none";
+    }
+
     renderRecommendationsSection();
   }
 
@@ -2106,8 +2324,8 @@
   }
 
   function ensureSection() {
-    // When crop health page is active, hide the heatmap section entirely
-    if (isCropHealthPage()) {
+    // When a dedicated dashboard subpage is active, hide the heatmap section entirely
+    if (isCropHealthPage() || isRecommendationsPage()) {
       destroyMap();
       if (state.section && state.section.isConnected) {
         state.section.style.display = 'none';
@@ -2186,9 +2404,10 @@
     if (!main) return;
 
     Array.from(main.children).forEach(function (child) {
-      // Don't hide the heatmap section, or the crop health section
+      // Don't hide the heatmap, crop health, or recommendations sections
       if (child === state.section || child.id === SECTION_ID) return;
       if (child === cropHealthSection || child.id === 'crop-health-page') return;
+      if (child === recommendationsSection || child.id === 'recommendations') return;
       if (hide) {
         child.dataset.agriHiddenByMode = 'true';
         child.style.display = 'none';
