@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crop Health | AGRI-EYE Smart Farm Monitoring</title>
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['Poppins', 'sans-serif'],
+                        body: ['Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Roboto', sans-serif; }
+        .font-heading { font-family: 'Poppins', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .health-cell { transition: transform 0.2s ease, filter 0.2s ease; }
+        .health-cell:hover { filter: brightness(1.2); transform: scale(1.02); }
+    </style>
+</head>
+<body class="min-h-screen bg-[#f5f6f0] flex">
+
+<aside class="hidden lg:flex flex-col w-[240px] bg-white border-r border-gray-200 fixed top-0 left-0 h-screen z-40">
+    <div class="flex items-center gap-3 px-5 h-16 border-b border-gray-100">
+        <img src="./favicon.png" alt="AgriEye" class="w-8 h-8" />
+        <div>
+            <p class="text-sm font-bold text-gray-900 tracking-wide font-heading">AGRIEYE</p>
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Smart Farming Intelligence</p>
+        </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-5">
+        <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">MAIN</p>
+            <div class="space-y-0.5">
+                <a href="./index.html#/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    Dashboard
+                </a>
+                <a href="./index.html#/dashboard#field-analysis" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 21V3h18v18H3z"/><path d="M9 3v18M3 9h18"/></svg>
+                    Field Analysis
+                </a>
+                <a href="./heatmaps.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+                    Heatmaps
+                </a>
+                <a href="./crop-health.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all bg-green-50 text-green-700 font-semibold">
+                    <svg class="w-[18px] h-[18px] text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    Crop Health
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">INSIGHTS</p>
+            <div class="space-y-0.5">
+                <a href="./index.html#/dashboard#recommendations" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    Recommendations
+                </a>
+                <a href="./alerts.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Alerts
+                    <span class="ml-auto w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">3</span>
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">SYSTEM</p>
+            <div class="space-y-0.5">
+                <a href="./index.html#/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Settings
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="mx-3 mb-4 p-3 rounded-xl bg-green-700 text-white">
+        <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-green-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="text-xs font-semibold font-heading">Growing Season</span>
+        </div>
+        <p class="text-[11px] text-green-200">Day 47 of 120 - Kharif</p>
+        <div class="mt-2 h-1.5 rounded-full bg-green-900/40 overflow-hidden">
+            <div class="h-full rounded-full bg-green-300" style="width: 39%"></div>
+        </div>
+    </div>
+</aside>
+
+<div class="flex-1 lg:ml-[240px] flex flex-col min-h-screen">
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 h-14 flex items-center justify-between px-5">
+        <div class="flex items-center gap-3">
+            <button class="lg:hidden p-2 rounded-md hover:bg-gray-100" onclick="document.getElementById('mobileSidebar').classList.toggle('hidden')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-gray-500 hidden sm:block">Profile</span>
+            <a href="./index.html#/profile">
+                <button class="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </a>
+            <a href="./index.html#/profile">
+                <div class="w-9 h-9 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:bg-green-700 transition-colors">?</div>
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-1 p-5 md:p-8">
+        <div class="mb-6">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 text-green-800 text-[11px] font-semibold font-heading uppercase tracking-wider mb-3">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                Crop Health
+            </div>
+            <h1 class="font-heading text-2xl md:text-[28px] font-bold text-gray-900">Crop Health Overview</h1>
+            <p class="text-sm text-gray-400 mt-1">Track canopy growth, crop stress, pests, and field-level health signals.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-green-500 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">Overall Health</span>
+                    <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-gray-900 font-heading">84</span>
+                    <span class="text-lg text-gray-400 font-medium">%</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Above district average by 12%</p>
+                <p class="text-xs text-green-600 font-semibold mt-2">&bull; Healthy</p>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-emerald-400 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">Healthy Crops</span>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 20s6-4 6-10a7 7 0 0 0-7-7s-3 2-3 7c0 6 4 10 4 10z"/><path d="M13 20s8-4 8-11a8 8 0 0 0-8-8s-4 3-4 8c0 7 4 11 4 11z"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-emerald-600 font-heading">58</span>
+                    <span class="text-lg text-gray-400 font-medium">%</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Crops growing well</p>
+                <p class="text-xs text-emerald-600 font-semibold mt-2">Stable canopy</p>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-amber-400 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">Needs Fertilizer</span>
+                    <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 8h14"/><path d="M7 14h10"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-amber-600 font-heading">22</span>
+                    <span class="text-lg text-gray-400 font-medium">%</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">North-east section</p>
+                <p class="text-xs text-amber-600 font-semibold mt-2">Monitor nutrients</p>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">Pest Affected</span>
+                    <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M4 12h4M16 12h4M12 4v4M12 16v4M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-red-600 font-heading">12</span>
+                    <span class="text-lg text-gray-400 font-medium">%</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Aphid activity in Zone C</p>
+                <p class="text-xs text-red-500 font-semibold mt-2">Action needed</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-5">
+            <section class="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                    <div>
+                        <h2 class="font-heading text-base font-bold text-gray-900">Health Map - Sector A</h2>
+                        <p class="text-[13px] text-gray-400 mt-0.5">14.2 hectares - Last scanned 45 min ago</p>
+                    </div>
+                    <span class="text-[11px] font-semibold px-3 py-1.5 rounded-full bg-green-50 text-green-700">NDVI 0.82</span>
+                </div>
+
+                <div class="relative rounded-xl overflow-hidden border border-gray-100 shadow-sm mb-5 max-w-3xl mx-auto" style="aspect-ratio: 1 / 1;">
+                    <img src="./assets/farm-topview-Bj11Aaqf.png" alt="Top view of crop field" class="absolute inset-0 w-full h-full object-cover" style="filter: brightness(0.92) contrast(1.08) saturate(1.1);" />
+                    <div class="absolute inset-0 bg-black/5"></div>
+                    <div id="healthGrid" class="absolute inset-0 grid grid-cols-12 grid-rows-12"></div>
+                    <div class="absolute top-2 left-0 right-0 flex justify-around pointer-events-none px-2">
+                        <span class="text-[10px] font-mono text-white/60 bg-black/30 px-1 py-0.5 rounded">A</span>
+                        <span class="text-[10px] font-mono text-white/60 bg-black/30 px-1 py-0.5 rounded">B</span>
+                        <span class="text-[10px] font-mono text-white/60 bg-black/30 px-1 py-0.5 rounded">C</span>
+                        <span class="text-[10px] font-mono text-white/60 bg-black/30 px-1 py-0.5 rounded">D</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-4 h-4 rounded-sm shrink-0 ring-1 ring-gray-200" style="background-color:#22c55e"></div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 leading-tight">Healthy Crops</p>
+                            <p class="text-xs text-gray-400">58% - crops growing well</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-4 h-4 rounded-sm shrink-0 ring-1 ring-gray-200" style="background-color:#eab308"></div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 leading-tight">Needs Fertilizer</p>
+                            <p class="text-xs text-gray-400">22% - nutrient deficiency</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-4 h-4 rounded-sm shrink-0 ring-1 ring-gray-200" style="background-color:#ef4444"></div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 leading-tight">Pest Affected</p>
+                            <p class="text-xs text-gray-400">12% - insect activity found</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-4 h-4 rounded-sm shrink-0 ring-1 ring-gray-200" style="background-color:#3b82f6"></div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 leading-tight">Waterlogged</p>
+                            <p class="text-xs text-gray-400">8% - excess water detected</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="space-y-5">
+                <section class="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                    <h2 class="font-heading text-base font-bold text-gray-900 mb-4">AI Health Signals</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <p class="text-sm font-medium text-gray-700">Fertilizer Needed</p>
+                                <span class="text-sm font-semibold text-amber-600">22% of land</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-gray-100 overflow-hidden"><div class="h-full rounded-full bg-amber-400" style="width: 22%"></div></div>
+                            <p class="text-xs text-gray-400 mt-1.5">North-east section shows nitrogen deficiency.</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <p class="text-sm font-medium text-gray-700">Pest Alert</p>
+                                <span class="text-sm font-semibold text-red-600">12% affected</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-gray-100 overflow-hidden"><div class="h-full rounded-full bg-red-500" style="width: 12%"></div></div>
+                            <p class="text-xs text-gray-400 mt-1.5">Aphid infestation detected in Zone C.</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <p class="text-sm font-medium text-gray-700">Waterlogging</p>
+                                <span class="text-sm font-semibold text-blue-600">8% of area</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-gray-100 overflow-hidden"><div class="h-full rounded-full bg-blue-500" style="width: 8%"></div></div>
+                            <p class="text-xs text-gray-400 mt-1.5">South-west field near irrigation channel.</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <p class="text-sm font-medium text-gray-700">Crop Stress</p>
+                                <span class="text-sm font-semibold text-green-600">Low</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-gray-100 overflow-hidden"><div class="h-full rounded-full bg-green-500" style="width: 85%"></div></div>
+                            <p class="text-xs text-gray-400 mt-1.5">Overall crop health is satisfactory.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                    <h2 class="font-heading text-base font-bold text-gray-900 mb-4">Recommended Actions</h2>
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-lg bg-amber-50 border border-amber-100">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-semibold text-gray-900">Apply Urea Fertilizer</p>
+                                <span class="text-[11px] font-semibold px-2 py-1 rounded-md bg-white text-amber-600">High</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">North-east zone needs 50 kg/acre urea application within 7 days.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-red-50 border border-red-100">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-semibold text-gray-900">Spray Imidacloprid</p>
+                                <span class="text-[11px] font-semibold px-2 py-1 rounded-md bg-white text-red-600">Urgent</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Zone C aphid infestation needs targeted treatment.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-semibold text-gray-900">Improve Drainage</p>
+                                <span class="text-[11px] font-semibold px-2 py-1 rounded-md bg-white text-blue-600">Medium</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">South-west field needs drainage channels to prevent waterlogging.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="mobileSidebar" class="lg:hidden fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" onclick="document.getElementById('mobileSidebar').classList.add('hidden')"></div>
+    <aside class="absolute left-0 top-0 bottom-0 w-[260px] bg-white shadow-xl flex flex-col">
+        <div class="flex items-center justify-between px-5 h-16 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <img src="./favicon.png" alt="AgriEye" class="w-8 h-8" />
+                <p class="text-sm font-bold text-gray-900 font-heading">AGRIEYE</p>
+            </div>
+            <button onclick="document.getElementById('mobileSidebar').classList.add('hidden')" class="p-2 rounded-md hover:bg-gray-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 px-3">
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">MAIN</p>
+            <a href="./index.html#/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Dashboard</a>
+            <a href="./index.html#/dashboard#field-analysis" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Field Analysis</a>
+            <a href="./heatmaps.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Heatmaps</a>
+            <a href="./crop-health.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium bg-green-50 text-green-700 font-semibold">Crop Health</a>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2 mt-5">INSIGHTS</p>
+            <a href="./index.html#/dashboard#recommendations" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Recommendations</a>
+            <a href="./alerts.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Alerts</a>
+        </nav>
+    </aside>
+</div>
+
+<script>
+const gridValues = [
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,1,0,0,2,
+    0,0,0,0,0,1,1,0,0,0,2,2,
+    1,0,0,0,0,0,1,1,0,2,1,0,
+    0,0,0,0,0,1,1,0,2,2,1,1,
+    0,0,0,0,1,1,0,2,2,1,1,0,
+    0,0,0,0,0,1,0,0,2,2,1,0,
+    0,0,0,1,1,0,0,2,2,0,0,0,
+    0,0,0,0,1,0,0,2,0,0,0,0,
+    0,0,1,0,0,0,3,3,3,0,0,0,
+    0,0,0,0,0,3,3,3,3,0,0,0,
+    0,0,0,0,0,3,3,3,0,0,0,0
+];
+
+const colors = [
+    "rgba(34, 197, 94, 0.40)",
+    "rgba(234, 179, 8, 0.50)",
+    "rgba(239, 68, 68, 0.50)",
+    "rgba(59, 130, 246, 0.50)"
+];
+
+const labels = ["Healthy Crops", "Needs Fertilizer", "Pest Affected", "Waterlogged"];
+
+document.getElementById("healthGrid").innerHTML = gridValues.map((value, index) => (
+    `<div class="health-cell border border-white/10" style="background:${colors[value]}" title="${labels[value]} - Plot ${index + 1}"></div>`
+)).join("");
+</script>
+</body>
+</html>

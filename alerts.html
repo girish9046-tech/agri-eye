@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alerts | AGRI-EYE Smart Farm Monitoring</title>
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['Poppins', 'sans-serif'],
+                        body: ['Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Roboto', sans-serif; }
+        .font-heading { font-family: 'Poppins', sans-serif; }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+    </style>
+</head>
+<body class="min-h-screen bg-[#f5f6f0] flex">
+
+<!-- ===== SIDEBAR (exact match from dashboard) ===== -->
+<aside class="hidden lg:flex flex-col w-[240px] bg-white border-r border-gray-200 fixed top-0 left-0 h-screen z-40">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-5 h-16 border-b border-gray-100">
+        <img src="./favicon.png" alt="AgriEye" class="w-8 h-8" />
+        <div>
+            <p class="text-sm font-bold text-gray-900 tracking-wide font-heading">AGRIEYE</p>
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Smart Farming Intelligence</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-5">
+        <!-- MAIN -->
+        <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">MAIN</p>
+            <div class="space-y-0.5">
+                <a href="./index.html#/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    Dashboard
+                </a>
+                <a href="./index.html#/dashboard#field-analysis" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 21V3h18v18H3z"/><path d="M9 3v18M3 9h18"/></svg>
+                    Field Analysis
+                </a>
+                <a href="./heatmaps.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+                    Heatmaps
+                </a>
+                <a href="./crop-health.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    Crop Health
+                </a>
+            </div>
+        </div>
+
+        <!-- INSIGHTS -->
+        <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">INSIGHTS</p>
+            <div class="space-y-0.5">
+                <a href="./index.html#/dashboard#recommendations" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    Recommendations
+                </a>
+                <a href="./alerts.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all bg-green-50 text-green-700 font-semibold">
+                    <svg class="w-[18px] h-[18px] text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Alerts
+                    <span class="ml-auto w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">3</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- SYSTEM -->
+        <div>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">SYSTEM</p>
+            <div class="space-y-0.5">
+                <a href="./index.html#/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50">
+                    <svg class="w-[18px] h-[18px] text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Settings
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Growing Season -->
+    <div class="mx-3 mb-4 p-3 rounded-xl bg-green-700 text-white">
+        <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-green-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="text-xs font-semibold font-heading">Growing Season</span>
+        </div>
+        <p class="text-[11px] text-green-200">Day 47 of 120 — Kharif</p>
+        <div class="mt-2 h-1.5 rounded-full bg-green-900/40 overflow-hidden">
+            <div class="h-full rounded-full bg-green-300" style="width: 39%"></div>
+        </div>
+    </div>
+</aside>
+
+<!-- ===== MAIN AREA ===== -->
+<div class="flex-1 lg:ml-[240px] flex flex-col min-h-screen">
+
+    <!-- Header (exact match) -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 h-14 flex items-center justify-between px-5">
+        <div class="flex items-center gap-3">
+            <!-- Mobile menu button placeholder -->
+            <button class="lg:hidden p-2 rounded-md hover:bg-gray-100" onclick="document.getElementById('mobileSidebar').classList.toggle('hidden')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-gray-500 hidden sm:block">Profile</span>
+            <a href="./index.html#/profile">
+                <button class="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </a>
+            <a href="./index.html#/profile">
+                <div class="w-9 h-9 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:bg-green-700 transition-colors">?</div>
+            </a>
+        </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 p-5 md:p-8">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 text-green-800 text-[11px] font-semibold font-heading uppercase tracking-wider mb-3">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                Alerts Center
+            </div>
+            <h1 class="font-heading text-2xl md:text-[28px] font-bold text-gray-900">Farm Alerts & Advisories</h1>
+            <p class="text-sm text-gray-400 mt-1">Monitor weather risks, pest threats, and smart recommendations for your fields.</p>
+        </div>
+
+        <!-- Summary Cards (same style as dashboard metric cards) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-green-500 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">Total Alerts</span>
+                    <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-gray-900 font-heading">12</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Active this week</p>
+                <p class="text-xs text-green-600 font-semibold mt-2">↑ 2 new today</p>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">High Risk</span>
+                    <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-red-600 font-heading">3</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Immediate action needed</p>
+                <p class="text-xs text-red-500 font-semibold mt-2">▲ Critical</p>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-amber-400 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">Medium Risk</span>
+                    <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-amber-600 font-heading">5</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Monitor closely</p>
+                <p class="text-xs text-amber-500 font-semibold mt-2">▲ Watch</p>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 border border-gray-100 border-l-4 border-l-blue-400 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-heading">Low Risk</span>
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-3xl font-bold text-blue-600 font-heading">4</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Advisory only</p>
+                <p class="text-xs text-blue-500 font-semibold mt-2">● Stable</p>
+            </div>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5">
+            <!-- LEFT: Weather + Alerts List -->
+            <div class="space-y-5">
+
+                <!-- Weather Forecast Card -->
+                <div class="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-1">
+                        <div>
+                            <h2 class="font-heading text-base font-bold text-gray-900">Weather Forecast</h2>
+                            <p class="text-[13px] text-gray-400 mt-0.5">24-hour outlook with risk indicators for your region.</p>
+                        </div>
+                        <div class="inline-flex items-center gap-0.5 p-0.5 rounded-full bg-gray-100">
+                            <button onclick="showWeather('hourly')" class="weather-tab px-3 py-1.5 rounded-full text-[13px] font-semibold font-heading transition-all bg-white text-gray-900 shadow-sm" data-tab="hourly">24-Hour</button>
+                            <button onclick="showWeather('weekly')" class="weather-tab px-3 py-1.5 rounded-full text-[13px] font-semibold font-heading transition-all text-gray-500" data-tab="weekly">7-Day</button>
+                        </div>
+                    </div>
+
+                    <div id="hourly-view" class="flex gap-3 overflow-x-auto py-3 mt-3">
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">6 AM</p><p class="text-xl my-1">🌤</p><p class="text-sm font-bold text-gray-900">24°</p><p class="text-[10px] text-blue-500 mt-1">5%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">9 AM</p><p class="text-xl my-1">☀️</p><p class="text-sm font-bold text-gray-900">28°</p><p class="text-[10px] text-blue-500 mt-1">0%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">12 PM</p><p class="text-xl my-1">☀️</p><p class="text-sm font-bold text-gray-900">33°</p><p class="text-[10px] text-blue-500 mt-1">0%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">3 PM</p><p class="text-xl my-1">⛅</p><p class="text-sm font-bold text-gray-900">35°</p><p class="text-[10px] text-blue-500 mt-1">10%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">6 PM</p><p class="text-xl my-1">🌦</p><p class="text-sm font-bold text-gray-900">31°</p><p class="text-[10px] text-blue-500 mt-1">40%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-amber-50 border border-amber-200"><p class="text-[11px] font-semibold text-amber-600">9 PM</p><p class="text-xl my-1">⛈</p><p class="text-sm font-bold text-gray-900">27°</p><p class="text-[10px] text-red-500 font-semibold mt-1">75%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">12 AM</p><p class="text-xl my-1">🌧</p><p class="text-sm font-bold text-gray-900">24°</p><p class="text-[10px] text-blue-500 mt-1">60%</p></div>
+                    </div>
+                    <div id="weekly-view" class="hidden flex gap-3 overflow-x-auto py-3 mt-3">
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">Mon</p><p class="text-xl my-1">☀️</p><p class="text-sm font-bold text-gray-900">34°</p><p class="text-[10px] text-blue-500 mt-1">5%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">Tue</p><p class="text-xl my-1">⛅</p><p class="text-sm font-bold text-gray-900">32°</p><p class="text-[10px] text-blue-500 mt-1">20%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-red-50 border border-red-200"><p class="text-[11px] font-semibold text-red-600">Wed</p><p class="text-xl my-1">⛈</p><p class="text-sm font-bold text-gray-900">28°</p><p class="text-[10px] text-red-500 font-semibold mt-1">80%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-amber-50 border border-amber-200"><p class="text-[11px] font-semibold text-amber-600">Thu</p><p class="text-xl my-1">🌧</p><p class="text-sm font-bold text-gray-900">26°</p><p class="text-[10px] text-blue-500 mt-1">70%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">Fri</p><p class="text-xl my-1">⛅</p><p class="text-sm font-bold text-gray-900">29°</p><p class="text-[10px] text-blue-500 mt-1">30%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">Sat</p><p class="text-xl my-1">☀️</p><p class="text-sm font-bold text-gray-900">33°</p><p class="text-[10px] text-blue-500 mt-1">10%</p></div>
+                        <div class="min-w-[72px] text-center p-3 rounded-xl bg-[#f5f6f0] border border-gray-100"><p class="text-[11px] font-semibold text-gray-400">Sun</p><p class="text-xl my-1">🌤</p><p class="text-sm font-bold text-gray-900">31°</p><p class="text-[10px] text-blue-500 mt-1">15%</p></div>
+                    </div>
+
+                    <!-- Extreme weather alerts -->
+                    <div class="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                        <span class="text-2xl">⛈</span>
+                        <div>
+                            <p class="text-[13px] font-semibold text-gray-900 font-heading">Thunderstorm Warning — Tonight 9 PM</p>
+                            <p class="text-[12px] text-gray-500 mt-0.5">Wind gusts up to 55 km/h · Heavy rain expected · Secure equipment</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
+                        <span class="text-2xl">🔥</span>
+                        <div>
+                            <p class="text-[13px] font-semibold text-gray-900 font-heading">Heatwave Advisory — Wed-Thu</p>
+                            <p class="text-[12px] text-gray-500 mt-0.5">Temperature may exceed 40°C · Increase irrigation frequency</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts List Card -->
+                <div class="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                    <h2 class="font-heading text-base font-bold text-gray-900">Active Alerts</h2>
+                    <p class="text-[13px] text-gray-400 mt-0.5 mb-4">All current alerts sorted by severity.</p>
+
+                    <!-- Filters -->
+                    <div class="flex flex-wrap items-center gap-2 mb-4">
+                        <button onclick="filterAlerts('all',this)" class="filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border border-gray-200 transition-all bg-green-600 text-white border-green-600" data-filter="all">All</button>
+                        <button onclick="filterAlerts('high',this)" class="filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border border-gray-200 transition-all text-gray-500 hover:border-green-500 hover:text-green-600" data-filter="high">High</button>
+                        <button onclick="filterAlerts('medium',this)" class="filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border border-gray-200 transition-all text-gray-500 hover:border-green-500 hover:text-green-600" data-filter="medium">Medium</button>
+                        <button onclick="filterAlerts('low',this)" class="filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border border-gray-200 transition-all text-gray-500 hover:border-green-500 hover:text-green-600" data-filter="low">Low</button>
+                        <button onclick="filterAlerts('weather',this)" class="filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border border-gray-200 transition-all text-gray-500 hover:border-green-500 hover:text-green-600" data-filter="weather">🌦 Weather</button>
+                        <button onclick="filterAlerts('pest',this)" class="filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border border-gray-200 transition-all text-gray-500 hover:border-green-500 hover:text-green-600" data-filter="pest">🐛 Pest</button>
+                        <button onclick="filterAlerts('advisory',this)" class="filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border border-gray-200 transition-all text-gray-500 hover:border-green-500 hover:text-green-600" data-filter="advisory">📋 Advisory</button>
+                        <div class="ml-auto flex items-center gap-2">
+                            <span class="text-[12px] font-medium text-gray-400">Critical Only</span>
+                            <div id="criticalToggle" onclick="toggleCritical()" class="w-9 h-5 rounded-full bg-gray-200 relative cursor-pointer transition-colors">
+                                <div class="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 transition-all shadow-sm" id="toggleKnob"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="alertList" class="space-y-2.5"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: AI Recommendations -->
+            <div class="space-y-5">
+                <div class="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                    <h2 class="font-heading text-base font-bold text-gray-900">🤖 AI Recommendations</h2>
+                    <p class="text-[13px] text-gray-400 mt-0.5 mb-4">Automated suggestions based on current risk analysis.</p>
+
+                    <!-- Immediate Actions -->
+                    <div class="p-4 rounded-xl bg-green-50 border border-green-200 mb-3">
+                        <p class="text-[13px] font-bold text-green-800 font-heading mb-2">🌾 Immediate Actions</p>
+                        <ul class="space-y-2">
+                            <li class="text-[12px] text-gray-700 flex items-start gap-2 leading-relaxed"><span class="text-green-600 font-bold mt-0.5">→</span> Secure irrigation pipes and field tarps before tonight's storm</li>
+                            <li class="text-[12px] text-gray-700 flex items-start gap-2 leading-relaxed border-t border-green-200 pt-2"><span class="text-green-600 font-bold mt-0.5">→</span> Apply preventive fungicide on Sector B2 — aphid pressure rising</li>
+                            <li class="text-[12px] text-gray-700 flex items-start gap-2 leading-relaxed border-t border-green-200 pt-2"><span class="text-green-600 font-bold mt-0.5">→</span> Delay fertilizer application until rain passes (Thu)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Weekly Focus -->
+                    <div class="p-4 rounded-xl bg-green-50 border border-green-200 mb-4">
+                        <p class="text-[13px] font-bold text-green-800 font-heading mb-2">📊 This Week's Focus</p>
+                        <ul class="space-y-2">
+                            <li class="text-[12px] text-gray-700 flex items-start gap-2 leading-relaxed"><span class="text-green-600 font-bold mt-0.5">→</span> Increase drip irrigation by 15% on Wed-Thu due to heatwave</li>
+                            <li class="text-[12px] text-gray-700 flex items-start gap-2 leading-relaxed border-t border-green-200 pt-2"><span class="text-green-600 font-bold mt-0.5">→</span> Scout Sector A for early blight signs — humidity will be high</li>
+                            <li class="text-[12px] text-gray-700 flex items-start gap-2 leading-relaxed border-t border-green-200 pt-2"><span class="text-green-600 font-bold mt-0.5">→</span> Optimal window for pesticide spray: Friday morning (low wind)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Risk Meters -->
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-[12px] font-semibold mb-1.5">
+                                <span class="text-gray-600">Overall Field Risk</span>
+                                <span class="text-amber-600">Medium</span>
+                            </div>
+                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-green-500 to-amber-500" style="width: 55%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[12px] font-semibold mb-1.5">
+                                <span class="text-gray-600">Weather Threat</span>
+                                <span class="text-red-600">High</span>
+                            </div>
+                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-red-500" style="width: 78%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[12px] font-semibold mb-1.5">
+                                <span class="text-gray-600">Pest Pressure</span>
+                                <span class="text-amber-600">Moderate</span>
+                            </div>
+                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-blue-400 to-amber-500" style="width: 42%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div id="mobileSidebar" class="lg:hidden fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" onclick="document.getElementById('mobileSidebar').classList.add('hidden')"></div>
+    <aside class="absolute left-0 top-0 bottom-0 w-[260px] bg-white shadow-xl flex flex-col">
+        <div class="flex items-center justify-between px-5 h-16 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <img src="./favicon.png" alt="AgriEye" class="w-8 h-8" />
+                <p class="text-sm font-bold text-gray-900 font-heading">AGRIEYE</p>
+            </div>
+            <button onclick="document.getElementById('mobileSidebar').classList.add('hidden')" class="p-2 rounded-md hover:bg-gray-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 px-3">
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">MAIN</p>
+            <a href="./index.html#/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Dashboard</a>
+            <a href="./index.html#/dashboard#field-analysis" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Field Analysis</a>
+            <a href="./heatmaps.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Heatmaps</a>
+            <a href="./crop-health.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Crop Health</a>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2 mt-5">INSIGHTS</p>
+            <a href="./index.html#/dashboard#recommendations" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-gray-50">Recommendations</a>
+            <a href="./alerts.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium bg-green-50 text-green-700 font-semibold">Alerts</a>
+        </nav>
+    </aside>
+</div>
+
+<script>
+const alerts = [
+    { severity:"high", type:"weather", title:"Severe Thunderstorm Warning", desc:"Heavy rain and wind gusts up to 55 km/h expected tonight. Secure all field equipment.", time:"2 hrs ago", sector:"All Sectors" },
+    { severity:"high", type:"pest", title:"Aphid Infestation Detected — Sector B2", desc:"Colony density exceeds threshold. Immediate treatment recommended.", time:"5 hrs ago", sector:"Sector B2" },
+    { severity:"high", type:"weather", title:"Heatwave Alert (Wed–Thu)", desc:"Temperatures may reach 42°C. Increase irrigation and monitor crop stress.", time:"8 hrs ago", sector:"All Sectors" },
+    { severity:"medium", type:"pest", title:"Early Blight Risk — Sector A", desc:"High humidity forecast creates favorable conditions for fungal growth.", time:"1 day ago", sector:"Sector A" },
+    { severity:"medium", type:"weather", title:"Wind Speed Advisory", desc:"Sustained winds of 30 km/h expected Friday. Delay aerial spraying.", time:"1 day ago", sector:"All Sectors" },
+    { severity:"medium", type:"advisory", title:"Soil Moisture Below Optimal", desc:"Sensor data shows 58% moisture in Sector C. Optimal range is 65-75%.", time:"1 day ago", sector:"Sector C" },
+    { severity:"medium", type:"advisory", title:"Fertilizer Window Closing", desc:"Apply urea before Wednesday rain for best absorption.", time:"2 days ago", sector:"Sector A, B" },
+    { severity:"medium", type:"pest", title:"Whitefly Activity Increasing", desc:"Population trending up in Sector D. Monitor and prepare neem spray.", time:"2 days ago", sector:"Sector D" },
+    { severity:"low", type:"advisory", title:"Harvest Planning Reminder", desc:"Based on crop maturity model, optimal harvest window: Day 105-110.", time:"3 days ago", sector:"All Sectors" },
+    { severity:"low", type:"weather", title:"Dew Point Advisory", desc:"Morning dew expected to be heavy. Delay fieldwork until 8 AM.", time:"3 days ago", sector:"All Sectors" },
+    { severity:"low", type:"advisory", title:"Equipment Maintenance Due", desc:"Drip irrigation system in Sector B maintenance scheduled.", time:"4 days ago", sector:"Sector B" },
+    { severity:"low", type:"advisory", title:"Crop Growth On Track", desc:"NDVI readings show healthy canopy development across all sectors.", time:"5 days ago", sector:"All Sectors" },
+];
+
+let currentFilter = "all";
+let criticalOnly = false;
+
+const severityDot = { high:"bg-red-500 shadow-[0_0_6px_rgba(220,38,38,0.4)]", medium:"bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.4)]", low:"bg-blue-400 shadow-[0_0_6px_rgba(59,130,246,0.3)]" };
+const typeBadge = { weather:"bg-blue-50 text-blue-600", pest:"bg-amber-50 text-amber-600", advisory:"bg-green-50 text-green-700" };
+
+function renderAlerts() {
+    const list = document.getElementById("alertList");
+    const filtered = alerts.filter(a => {
+        if (criticalOnly && a.severity !== "high") return false;
+        if (currentFilter === "all") return true;
+        if (["high","medium","low"].includes(currentFilter)) return a.severity === currentFilter;
+        return a.type === currentFilter;
+    });
+    list.innerHTML = filtered.length ? filtered.map(a => `
+        <div class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-100 bg-white hover:shadow-sm hover:border-gray-200 transition-all cursor-pointer">
+            <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${severityDot[a.severity]}"></div>
+            <div class="flex-1 min-w-0">
+                <p class="text-[13px] font-semibold text-gray-900 font-heading">${a.title}</p>
+                <p class="text-[12px] text-gray-500 mt-0.5 leading-relaxed">${a.desc}</p>
+                <div class="flex gap-3 mt-1.5 text-[11px] text-gray-400">
+                    <span class="flex items-center gap-1">🕐 ${a.time}</span>
+                    <span class="flex items-center gap-1">📍 ${a.sector}</span>
+                </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-1 rounded-md whitespace-nowrap ${typeBadge[a.type]}">${a.type.charAt(0).toUpperCase()+a.type.slice(1)}</span>
+        </div>
+    `).join("") : '<div class="text-center py-8 text-sm text-gray-400">No alerts match this filter.</div>';
+}
+
+function filterAlerts(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll(".filter-btn").forEach(b => {
+        b.className = "filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border transition-all text-gray-500 border-gray-200 hover:border-green-500 hover:text-green-600";
+    });
+    btn.className = "filter-btn px-3 py-1.5 rounded-full text-[12px] font-medium font-heading border transition-all bg-green-600 text-white border-green-600";
+    renderAlerts();
+}
+
+function toggleCritical() {
+    criticalOnly = !criticalOnly;
+    const toggle = document.getElementById("criticalToggle");
+    const knob = document.getElementById("toggleKnob");
+    if (criticalOnly) {
+        toggle.className = "w-9 h-5 rounded-full bg-red-500 relative cursor-pointer transition-colors";
+        knob.style.left = "18px";
+    } else {
+        toggle.className = "w-9 h-5 rounded-full bg-gray-200 relative cursor-pointer transition-colors";
+        knob.style.left = "2px";
+    }
+    renderAlerts();
+}
+
+function showWeather(view) {
+    document.getElementById("hourly-view").className = view === "hourly" ? "flex gap-3 overflow-x-auto py-3 mt-3" : "hidden";
+    document.getElementById("weekly-view").className = view === "weekly" ? "flex gap-3 overflow-x-auto py-3 mt-3" : "hidden";
+    document.querySelectorAll(".weather-tab").forEach(t => {
+        t.className = t.dataset.tab === view
+            ? "weather-tab px-3 py-1.5 rounded-full text-[13px] font-semibold font-heading transition-all bg-white text-gray-900 shadow-sm"
+            : "weather-tab px-3 py-1.5 rounded-full text-[13px] font-semibold font-heading transition-all text-gray-500";
+    });
+}
+
+renderAlerts();
+</script>
+</body>
+</html>
