@@ -383,7 +383,7 @@
     setHeatmapsMode(false);
     setCropHealthMode(false);
     setRecommendationsMode(false);
-    window.location.href = "./alerts_v3.html";
+    window.location.href = "./alerts.html";
   }
 
   function openCropHealthWorkspace() {
@@ -588,7 +588,7 @@
       
       // Handle Dashboard Link — navigate to #/dashboard within the SPA
       if (isAlerts) {
-        link.setAttribute('href', './alerts_v3.html');
+        link.setAttribute('href', './alerts.html');
         link.dataset.agriNavRole = 'alerts';
 
         if (!link.dataset.agriHijacked) {
